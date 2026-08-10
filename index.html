@@ -433,6 +433,21 @@
     <button class="fab" onclick="app.showNewPatient()">+</button>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // 强制清除旧版本缓存
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                }
+            });
+            caches.keys().then(function(names) {
+                for(let name of names) {
+                    caches.delete(name);
+                }
+            });
+        }
+    </script>
     <script src="config.js?v=2.3"></script>
     <script src="database.js?v=2.3"></script>
     <script src="fields-complete.js?v=2.3"></script>
