@@ -43,7 +43,7 @@ const app = {
         } else if (this.currentView === 'all-patients') {
             container.innerHTML = await this.renderAllPatients();
         } else if (this.currentView === 'new-patient') {
-            container.innerHTML = this.renderNewPatientForm();
+            container.innerHTML = await this.renderNewPatientForm();
         }
     },
 

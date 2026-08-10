@@ -1,5 +1,5 @@
-// Service Worker - 离线支持 V2.3
-const CACHE_NAME = 'pocd-v2.3';
+// Service Worker - 离线支持 V2.3-fix
+const CACHE_NAME = 'pocd-v2.3-fix';
 const urlsToCache = [
   '/',
   '/index.html',
