@@ -1,0 +1,21 @@
+{
+  "name": "POCD研究数据采集",
+  "short_name": "POCD采集",
+  "description": "术后认知功能障碍研究数据采集系统 - 云端同步版",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F7F4EF",
+  "theme_color": "#C4612F",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
