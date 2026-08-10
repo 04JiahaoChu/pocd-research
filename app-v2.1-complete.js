@@ -413,7 +413,9 @@ const app = {
             'mmse_naming',
             'mmse_repetition',
             'mmse_comprehension',
-            'mmse_visuospatial'
+            'mmse_reading',
+            'mmse_writing',
+            'mmse_drawing'
         ];
         const mmseTotal = this.calculateSum(mmseFields);
         const mmseTotalElement = document.getElementById('mmse_total');
@@ -547,7 +549,12 @@ const app = {
                 enroll_date: formData.enroll_date,
                 surgery_date: formData.surgery_date,
                 has_l3_ct: formData.has_l3_ct,
-                sleep_intervention_triggered: formData.sleep_intervention_triggered
+                sleep_intervention_triggered: formData.sleep_intervention_triggered,
+                age: formData.age,
+                gender: formData.gender,
+                education_years: formData.education_years,
+                occupation: formData.occupation,
+                bmi: formData.bmi
             });
             if (updated) {
                 this.currentPatient = updated;
