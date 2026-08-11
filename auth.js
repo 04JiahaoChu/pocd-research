@@ -176,5 +176,5 @@ class Auth {
     }
 }
 
-// 全局实例
-const auth = new Auth();
+// 创建全局实例
+window.auth = new Auth();
