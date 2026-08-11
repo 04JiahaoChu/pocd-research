@@ -623,12 +623,15 @@ const app = {
             return;
         }
 
-        const success = await db.deletePatient(id);
-        if (success) {
+        try {
+            await db.deletePatient(id);
             alert('患者已删除');
+            // 强制清除缓存后返回
+            db.clearCache();
             this.backToTasks();
-        } else {
-            alert('删除失败，请稍后重试');
+        } catch (error) {
+            console.error('删除患者失败:', error);
+            alert('删除失败：' + error.message);
         }
     }
 };
