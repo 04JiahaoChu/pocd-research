@@ -197,16 +197,22 @@
 
         let dbInitialized = false;
 
-        // 初始化数据库
-        (async () => {
+        // 等待所有脚本加载完成后再初始化
+        window.addEventListener('load', async () => {
             try {
                 // 先禁用登录按钮
                 loginBtn.disabled = true;
                 loginBtn.textContent = '初始化中...';
 
-                // 确保 db 对象存在
+                // 等待 db 对象加载（最多等待5秒）
+                let attempts = 0;
+                while (!window.db && attempts < 50) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    attempts++;
+                }
+
                 if (!window.db) {
-                    throw new Error('数据库模块未加载');
+                    throw new Error('数据库模块加载超时');
                 }
 
                 await window.db.initialize();
@@ -221,7 +227,7 @@
                 showError('数据库连接失败，请检查网络后刷新页面');
                 loginBtn.disabled = true;
             }
-        })();
+        });
 
         // 登录表单提交
         loginForm.addEventListener('submit', async (e) => {
