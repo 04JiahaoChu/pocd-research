@@ -291,6 +291,33 @@ class DatabaseOptimized {
         }, '获取患者所有数据');
     }
 
+    // 保存患者数据（用于表单保存）
+    async savePatientData(patientId, phase, formData, isCompleted) {
+        // 宽表结构：直接更新 patients 表的相应字段
+        return this.retryOperation(async () => {
+            const { data, error } = await this.supabase
+                .from('patients')
+                .update(formData)
+                .eq('id', patientId)
+                .select()
+                .single();
+
+            if (error) {
+                console.error('保存患者数据失败:', error);
+                throw error;
+            }
+
+            this.clearCache();
+            return data;
+        }, '保存患者数据');
+    }
+
+    // 获取患者某个阶段的数据
+    async getPatientData(patientId, phase) {
+        // 宽表结构：返回整个患者记录，由调用方筛选需要的字段
+        return this.getPatient(patientId);
+    }
+
     // ========== 今日任务计算 ==========
     async getTodayTasks() {
         const patients = await this.getAllPatients();

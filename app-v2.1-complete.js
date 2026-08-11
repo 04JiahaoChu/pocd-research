@@ -260,24 +260,18 @@ const app = {
         const allData = await db.getAllPatientData(patient.id);
 
         const phases = [
-            { id: 'basic_info', name: '基本信息', icon: '👤' },
-            { id: 'T0', name: 'T0 术前基线', icon: '📋' },
-            { id: 'POD1', name: 'POD1 术后第1天', icon: '🏥' },
-            { id: 'POD3', name: 'POD3 术后第3天', icon: '📈' },
-            { id: 'POD7', name: 'POD7 术后第7天', icon: '✅' },
-            { id: 'POD14', name: 'POD14 术后第14天', icon: '🔄' },
-            { id: 'POD30', name: 'POD30 术后第30天', icon: '🎯' }
+            { id: 'basic_info', name: '基本信息', icon: '👤', checkField: 'study_id' },
+            { id: 'T0', name: 'T0 术前基线', icon: '📋', checkField: 't0_mmse_total' },
+            { id: 'POD1', name: 'POD1 术后第1天', icon: '🏥', checkField: 'pod1_cam_delirium' },
+            { id: 'POD3', name: 'POD3 术后第3天', icon: '📈', checkField: 'pod3_mmse' },
+            { id: 'POD7', name: 'POD7 术后第7天', icon: '✅', checkField: 'pod7_mmse' },
+            { id: 'POD14', name: 'POD14 术后第14天', icon: '🔄', checkField: 'pod14_mmse_short' },
+            { id: 'POD30', name: 'POD30 术后第30天', icon: '🎯', checkField: 'pod30_mmse' }
         ];
 
         const phaseNav = phases.map(p => {
             const active = p.id === this.currentPhase ? 'active' : '';
-            let completed = '';
-            if (p.id === 'basic_info') {
-                completed = patient.study_id ? '✓' : '';
-            } else {
-                const phaseData = allData.find(d => d.phase === p.id);
-                completed = phaseData?.completed ? '✓' : '';
-            }
+            const completed = allData[p.checkField] ? '✓' : '';
             return `<button class="phase-btn ${active}" onclick="app.switchPhase('${p.id}')">${p.icon} ${p.name} ${completed}</button>`;
         }).join('');
 
@@ -288,8 +282,7 @@ const app = {
                     <span class="eyebrow">Patient</span>
                     <h2>${patient.study_id}</h2>
                     <p><strong>姓名：</strong>${patient.name || '未填写'}</p>
-                    <p><strong>病区床号：</strong>${patient.ward || ''}  ${patient.bed_no || ''}</p>
-                    <p><strong>入组日期：</strong>${patient.enroll_date || '未设置'}</p>
+                    <p><strong>入组日期：</strong>${patient.enrollment_date || '未设置'}</p>
                     <p><strong>手术日期：</strong>${patient.surgery_date || '未设置'}</p>
                     <button class="btn btn-danger" onclick="app.deletePatient('${patient.id}')" style="margin-top: 1rem;">删除患者</button>
                 </div>
