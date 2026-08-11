@@ -177,6 +177,9 @@ class DatabaseOptimized {
     // 创建患者（带重试）
     async createPatient(patientData) {
         return this.retryOperation(async () => {
+            // 调试：打印当前用户信息
+            console.log('当前用户对象:', window.auth ? window.auth.currentUser : 'auth不存在');
+
             // 获取下一个研究编号
             const { data: nextId, error: idError } = await this.supabase
                 .rpc('get_next_study_id');
@@ -186,17 +189,30 @@ class DatabaseOptimized {
                 throw idError;
             }
 
+            // 获取user_id
+            let userId = null;
+            if (window.auth && window.auth.currentUser) {
+                userId = window.auth.currentUser.user_id || window.auth.currentUser.id;
+                console.log('提取的user_id:', userId);
+            } else {
+                console.error('无法获取当前用户！');
+            }
+
+            const insertData = {
+                user_id: userId,
+                study_id: nextId,
+                name: patientData.name || '',
+                age: patientData.age || null,
+                gender: patientData.gender || null,
+                enrollment_date: patientData.enrollment_date || new Date().toISOString().split('T')[0],
+                surgery_date: patientData.surgery_date || null
+            };
+
+            console.log('即将插入的数据:', insertData);
+
             const { data, error } = await this.supabase
                 .from('patients')
-                .insert([{
-                    user_id: window.auth && window.auth.currentUser ? window.auth.currentUser.user_id : null,
-                    study_id: nextId,
-                    name: patientData.name || '',
-                    age: patientData.age || null,
-                    gender: patientData.gender || null,
-                    enrollment_date: patientData.enrollment_date || new Date().toISOString().split('T')[0],
-                    surgery_date: patientData.surgery_date || null
-                }])
+                .insert([insertData])
                 .select()
                 .single();
 
