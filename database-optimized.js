@@ -189,7 +189,7 @@ class DatabaseOptimized {
             const { data, error } = await this.supabase
                 .from('patients')
                 .insert([{
-                    user_id: window.auth ? window.auth.currentUser.id : null,
+                    user_id: window.auth && window.auth.currentUser ? window.auth.currentUser.user_id : null,
                     study_id: nextId,
                     name: patientData.name || '',
                     age: patientData.age || null,
