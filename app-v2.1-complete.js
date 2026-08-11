@@ -11,7 +11,7 @@ const app = {
         this.showLoading();
 
         // 初始化数据库
-        const success = await db.init();
+        const success = await db.initialize();
         if (!success) {
             this.hideLoading();
             return;
