@@ -11,7 +11,7 @@ const app = {
         this.showLoading();
 
         // 初始化数据库
-        const success = await db.init();
+        const success = await db.initialize();
         if (!success) {
             this.hideLoading();
             return;
@@ -157,15 +157,25 @@ const app = {
 
         const list = await Promise.all(patients.map(async (p) => {
             const allData = await db.getAllPatientData(p.id);
-            const phases = ['T0', 'POD1', 'POD3', 'POD7', 'POD14', 'POD30'];
-            const completed = allData.filter(d => d.completed).length;
-            const progress = `${completed}/${phases.length}`;
+
+            // 检查各阶段是否完成（检查关键字段是否有值）
+            const phaseChecks = [
+                { phase: 'T0', field: 't0_mmse_total' },
+                { phase: 'POD1', field: 'pod1_cam_delirium' },
+                { phase: 'POD3', field: 'pod3_mmse' },
+                { phase: 'POD7', field: 'pod7_mmse' },
+                { phase: 'POD14', field: 'pod14_mmse_short' },
+                { phase: 'POD30', field: 'pod30_mmse' }
+            ];
+
+            const completed = phaseChecks.filter(check => allData[check.field] !== null && allData[check.field] !== undefined).length;
+            const progress = `${completed}/${phaseChecks.length}`;
 
             return `
                 <div class="task-item" onclick="app.goToPatient('${p.id}')">
                     <div class="task-content">
                         <h3>${p.study_id} ${p.name ? '- ' + p.name : ''}</h3>
-                        <p>${p.ward || ''} ${p.bed_no || ''} | 入组：${p.enroll_date || '未设置'} | 手术：${p.surgery_date || '未设置'} | 进度：${progress}</p>
+                        <p>入组：${p.enrollment_date || '未设置'} | 手术：${p.surgery_date || '未设置'} | 进度：${progress}</p>
                     </div>
                     <button class="btn btn-secondary btn-small" onclick="event.stopPropagation(); app.goToPatient('${p.id}')">录入</button>
                 </div>
@@ -256,28 +266,36 @@ const app = {
     },
 
     async renderPatientDetail() {
+        // 检查 currentPatient 是否存在
+        if (!this.currentPatient) {
+            console.error('renderPatientDetail: currentPatient 为 null');
+            return `
+                <div class="container">
+                    <div class="empty-state">
+                        <h3>患者数据加载失败</h3>
+                        <p>请返回主页重试</p>
+                        <button class="btn btn-primary" onclick="app.backToTasks()">返回主页</button>
+                    </div>
+                </div>
+            `;
+        }
+
         const patient = this.currentPatient;
         const allData = await db.getAllPatientData(patient.id);
 
         const phases = [
-            { id: 'basic_info', name: '基本信息', icon: '👤' },
-            { id: 'T0', name: 'T0 术前基线', icon: '📋' },
-            { id: 'POD1', name: 'POD1 术后第1天', icon: '🏥' },
-            { id: 'POD3', name: 'POD3 术后第3天', icon: '📈' },
-            { id: 'POD7', name: 'POD7 术后第7天', icon: '✅' },
-            { id: 'POD14', name: 'POD14 术后第14天', icon: '🔄' },
-            { id: 'POD30', name: 'POD30 术后第30天', icon: '🎯' }
+            { id: 'basic_info', name: '基本信息', icon: '👤', checkField: 'study_id' },
+            { id: 'T0', name: 'T0 术前基线', icon: '📋', checkField: 't0_mmse_total' },
+            { id: 'POD1', name: 'POD1 术后第1天', icon: '🏥', checkField: 'pod1_cam_delirium' },
+            { id: 'POD3', name: 'POD3 术后第3天', icon: '📈', checkField: 'pod3_mmse' },
+            { id: 'POD7', name: 'POD7 术后第7天', icon: '✅', checkField: 'pod7_mmse' },
+            { id: 'POD14', name: 'POD14 术后第14天', icon: '🔄', checkField: 'pod14_mmse_short' },
+            { id: 'POD30', name: 'POD30 术后第30天', icon: '🎯', checkField: 'pod30_mmse' }
         ];
 
         const phaseNav = phases.map(p => {
             const active = p.id === this.currentPhase ? 'active' : '';
-            let completed = '';
-            if (p.id === 'basic_info') {
-                completed = patient.study_id ? '✓' : '';
-            } else {
-                const phaseData = allData.find(d => d.phase === p.id);
-                completed = phaseData?.completed ? '✓' : '';
-            }
+            const completed = allData[p.checkField] ? '✓' : '';
             return `<button class="phase-btn ${active}" onclick="app.switchPhase('${p.id}')">${p.icon} ${p.name} ${completed}</button>`;
         }).join('');
 
@@ -288,8 +306,11 @@ const app = {
                     <span class="eyebrow">Patient</span>
                     <h2>${patient.study_id}</h2>
                     <p><strong>姓名：</strong>${patient.name || '未填写'}</p>
-                    <p><strong>病区床号：</strong>${patient.ward || ''}  ${patient.bed_no || ''}</p>
-                    <p><strong>入组日期：</strong>${patient.enroll_date || '未设置'}</p>
+                    <p><strong>病案号：</strong>${patient.medical_record_no || '未填写'}</p>
+                    <p><strong>病区：</strong>${patient.ward || '未填写'}</p>
+                    <p><strong>床号：</strong>${patient.bed_no || '未填写'}</p>
+                    <p><strong>联系电话：</strong>${patient.phone || '未填写'}</p>
+                    <p><strong>入组日期：</strong>${patient.enrollment_date || '未设置'}</p>
                     <p><strong>手术日期：</strong>${patient.surgery_date || '未设置'}</p>
                     <button class="btn btn-danger" onclick="app.deletePatient('${patient.id}')" style="margin-top: 1rem;">删除患者</button>
                 </div>
@@ -490,41 +511,59 @@ const app = {
     },
 
     async submitNewPatient() {
-        const patientData = {
-            studyId: document.getElementById('new_study_id').value,
-            name: document.getElementById('new_name').value,
-            medicalRecordNo: document.getElementById('new_medical_record_no').value,
-            ward: document.getElementById('new_ward').value,
-            bedNo: document.getElementById('new_bed_no').value,
-            phone: document.getElementById('new_phone').value,
-            enrollDate: document.getElementById('new_enroll_date').value,
-            surgeryDate: document.getElementById('new_surgery_date').value,
-            hasL3Ct: document.getElementById('new_has_l3_ct').value,
-            age: document.getElementById('new_age').value,
-            gender: document.getElementById('new_gender').value,
-            education_years: document.getElementById('new_education_years').value,
-            occupation: document.getElementById('new_occupation').value,
-            bmi: document.getElementById('new_bmi').value
-        };
+        // 读取表单中所有字段
+        const studyId = document.getElementById('new_study_id')?.value || '';
+        const name = document.getElementById('new_name')?.value || '';
+        const medicalRecordNo = document.getElementById('new_medical_record_no')?.value || '';
+        const ward = document.getElementById('new_ward')?.value || '';
+        const bedNo = document.getElementById('new_bed_no')?.value || '';
+        const phone = document.getElementById('new_phone')?.value || '';
+        const enrollDate = document.getElementById('new_enroll_date')?.value || '';
+        const surgeryDate = document.getElementById('new_surgery_date')?.value || '';
 
-        if (!patientData.studyId || !patientData.medicalRecordNo || !patientData.ward ||
-            !patientData.bedNo || !patientData.enrollDate || !patientData.surgeryDate) {
-            alert('请填写所有必填项（标*的字段）');
+        // 验证必填项
+        if (!studyId || !medicalRecordNo || !ward || !bedNo || !enrollDate || !surgeryDate) {
+            alert('请填写所有必填项：研究编号、病案号、病区、床号、入组日期、手术日期');
             return;
         }
 
-        const patient = await db.createPatient(patientData);
-        if (patient) {
-            alert('患者创建成功！');
-            this.goToPatient(patient.id);
+        const patientData = {
+            study_id: studyId,
+            name: name,
+            medical_record_no: medicalRecordNo,
+            ward: ward,
+            bed_no: bedNo,
+            phone: phone,
+            enrollment_date: enrollDate,
+            surgery_date: surgeryDate
+        };
+
+        try {
+            const patient = await db.createPatient(patientData);
+            if (patient) {
+                alert('患者创建成功！');
+                await this.goToPatient(patient.id);
+            }
+        } catch (error) {
+            console.error('创建患者失败:', error);
+            alert('创建失败：' + error.message);
         }
     },
 
     async goToPatient(id, phase = 'basic_info') {
-        this.currentPatient = await db.getPatient(id);
-        this.currentView = 'patient-detail';
-        this.currentPhase = phase;
-        await this.render();
+        try {
+            this.currentPatient = await db.getPatient(id);
+            if (!this.currentPatient) {
+                throw new Error('患者数据不存在');
+            }
+            this.currentView = 'patient-detail';
+            this.currentPhase = phase;
+            await this.render();
+        } catch (error) {
+            console.error('加载患者失败:', error);
+            alert('加载患者失败：' + error.message);
+            this.backToTasks();
+        }
     },
 
     switchPhase(phase) {
@@ -551,10 +590,10 @@ const app = {
                 ward: formData.ward,
                 bed_no: formData.bed_no,
                 phone: formData.phone,
-                enroll_date: formData.enroll_date,
+                enrollment_date: formData.enrollment_date,
                 surgery_date: formData.surgery_date,
                 has_l3_ct: formData.has_l3_ct,
-                sleep_intervention_triggered: formData.sleep_intervention_triggered,
+                sleep_correction_triggered: formData.sleep_correction_triggered,
                 age: formData.age,
                 gender: formData.gender,
                 education_years: formData.education_years,
@@ -607,12 +646,20 @@ const app = {
             return;
         }
 
-        const success = await db.deletePatient(id);
-        if (success) {
+        try {
+            await db.deletePatient(id);
             alert('患者已删除');
-            this.backToTasks();
-        } else {
-            alert('删除失败，请稍后重试');
+
+            // 清理状态
+            db.clearCache();
+            this.currentPatient = null;
+            this.currentView = 'tasks';
+
+            // 重新渲染
+            await this.render();
+        } catch (error) {
+            console.error('删除患者失败:', error);
+            alert('删除失败：' + error.message);
         }
     }
 };

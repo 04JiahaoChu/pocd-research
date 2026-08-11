@@ -1,5 +1,7 @@
 // 数据库连接优化配置
-// 添加重试机制、超时控制、连接池优化
+// 适配完整116字段数据库结构
+// 版本：3.0
+// 日期：2026-08-12
 
 class DatabaseOptimized {
     constructor() {
@@ -11,7 +13,7 @@ class DatabaseOptimized {
     }
 
     // 初始化数据库连接（带重试）
-    async init() {
+    async initialize() {
         for (let i = 0; i < this.retryCount; i++) {
             try {
                 this.supabase = supabase.createClient(
@@ -19,9 +21,8 @@ class DatabaseOptimized {
                     SUPABASE_CONFIG.anonKey,
                     {
                         auth: {
-                            persistSession: true,
-                            autoRefreshToken: true,
-                            detectSessionInUrl: true
+                            persistSession: false,
+                            autoRefreshToken: false
                         },
                         global: {
                             headers: {
@@ -30,11 +31,6 @@ class DatabaseOptimized {
                         },
                         db: {
                             schema: 'public'
-                        },
-                        realtime: {
-                            params: {
-                                eventsPerSecond: 10  // 限制实时更新频率
-                            }
                         }
                     }
                 );
@@ -47,7 +43,7 @@ class DatabaseOptimized {
             } catch (error) {
                 console.error(`数据库连接失败 (尝试 ${i + 1}/${this.retryCount}):`, error);
                 if (i < this.retryCount - 1) {
-                    await this.sleep(this.retryDelay * (i + 1));  // 递增延迟
+                    await this.sleep(this.retryDelay * (i + 1));
                 } else {
                     alert('数据库连接失败，请检查网络后刷新页面重试');
                     throw error;
@@ -67,7 +63,25 @@ class DatabaseOptimized {
             .select('id')
             .limit(1);
 
-        await Promise.race([check, timeout]);
+        const result = await Promise.race([check, timeout]);
+
+        if (window.auth && window.auth.currentUser) {
+            await this.setRoleContext(window.auth.currentUser.role);
+        }
+
+        return result;
+    }
+
+    // 设置角色上下文
+    async setRoleContext(role) {
+        try {
+            this.supabase.rest.headers = {
+                ...this.supabase.rest.headers,
+                'x-user-role': role
+            };
+        } catch (error) {
+            console.warn('设置角色上下文失败:', error);
+        }
     }
 
     // 延迟函数
@@ -92,49 +106,26 @@ class DatabaseOptimized {
         }
     }
 
-    // 登录（带重试）
-    async login(email, password) {
-        return this.retryOperation(async () => {
-            const { data, error } = await this.supabase.auth.signInWithPassword({
-                email,
-                password
-            });
-
-            if (error) {
-                console.error('登录失败:', error);
-                throw error;
-            }
-
-            this.currentUser = data.user;
-            console.log('登录成功:', this.currentUser.email);
-            return data;
-        }, '登录');
-    }
-
     // 获取所有患者（带缓存）
     async getAllPatients() {
-        // 先尝试从缓存读取
         const cached = this.getCachedPatients();
-        if (cached && Date.now() - cached.timestamp < 30000) {  // 30秒缓存
+        if (cached && Date.now() - cached.timestamp < 30000) {
             console.log('使用缓存的患者列表');
             return cached.data;
         }
 
-        // 从数据库获取
         return this.retryOperation(async () => {
             const { data, error } = await this.supabase
                 .from('patients')
-                .select('id, study_id, name, enroll_date, surgery_date')
+                .select('id, study_id, name, age, gender, surgery_date, surgery_type, enrollment_date, created_at')
                 .order('created_at', { ascending: false });
 
             if (error) {
                 console.error('获取患者列表失败:', error);
-                // 如果有缓存，即使过期也返回
                 if (cached) return cached.data;
                 throw error;
             }
 
-            // 更新缓存
             this.setCachedPatients(data);
             return data;
         }, '获取患者列表');
@@ -178,6 +169,7 @@ class DatabaseOptimized {
                 console.error('获取患者失败:', error);
                 throw error;
             }
+
             return data;
         }, '获取患者详情');
     }
@@ -185,26 +177,27 @@ class DatabaseOptimized {
     // 创建患者（带重试）
     async createPatient(patientData) {
         return this.retryOperation(async () => {
+            // 获取user_id
+            let userId = null;
+            if (window.auth && window.auth.currentUser) {
+                userId = window.auth.currentUser.user_id || window.auth.currentUser.id;
+            }
+
+            const insertData = {
+                user_id: userId,
+                study_id: patientData.study_id,
+                name: patientData.name || '',
+                age: patientData.age || null,
+                gender: patientData.gender || null,
+                enrollment_date: patientData.enrollment_date || new Date().toISOString().split('T')[0],
+                surgery_date: patientData.surgery_date || null
+            };
+
+            console.log('即将插入的数据:', insertData);
+
             const { data, error } = await this.supabase
                 .from('patients')
-                .insert([{
-                    user_id: this.currentUser.id,
-                    study_id: patientData.studyId,
-                    name: patientData.name || '',
-                    medical_record_no: patientData.medicalRecordNo || '',
-                    ward: patientData.ward || '',
-                    bed_no: patientData.bedNo || '',
-                    phone: patientData.phone || '',
-                    enroll_date: patientData.enrollDate,
-                    surgery_date: patientData.surgeryDate || null,
-                    has_l3_ct: patientData.hasL3Ct || null,
-                    sleep_intervention_triggered: patientData.sleepInterventionTriggered || null,
-                    age: patientData.age || null,
-                    gender: patientData.gender || null,
-                    education_years: patientData.education_years || null,
-                    occupation: patientData.occupation || null,
-                    bmi: patientData.bmi || null
-                }])
+                .insert([insertData])
                 .select()
                 .single();
 
@@ -216,7 +209,6 @@ class DatabaseOptimized {
                 throw error;
             }
 
-            // 清除缓存
             this.clearCache();
             return data;
         }, '创建患者');
@@ -225,6 +217,9 @@ class DatabaseOptimized {
     // 更新患者（带重试）
     async updatePatient(id, updates) {
         return this.retryOperation(async () => {
+            // 添加更新时间
+            updates.updated_at = new Date().toISOString();
+
             const { data, error } = await this.supabase
                 .from('patients')
                 .update(updates)
@@ -238,7 +233,6 @@ class DatabaseOptimized {
                 throw error;
             }
 
-            // 清除缓存
             this.clearCache();
             return data;
         }, '更新患者');
@@ -257,70 +251,137 @@ class DatabaseOptimized {
                 throw error;
             }
 
-            // 清除缓存
             this.clearCache();
             return true;
         }, '删除患者');
     }
 
-    // 保存患者数据（带重试）
-    async savePatientData(patientId, phase, formData, isCompleted) {
+    // 获取患者所有阶段数据（新增方法）
+    async getAllPatientData(patientId) {
+        // 因为使用的是宽表结构，所有数据都在 patients 表中
+        // 这个方法返回完整的患者记录
         return this.retryOperation(async () => {
             const { data, error } = await this.supabase
-                .from('patient_data')
-                .upsert({
-                    patient_id: patientId,
-                    phase: phase,
-                    data: formData,
-                    is_completed: isCompleted
-                }, {
-                    onConflict: 'patient_id,phase'
-                })
+                .from('patients')
+                .select('*')
+                .eq('id', patientId)
+                .single();
+
+            if (error) {
+                console.error('获取患者数据失败:', error);
+                throw error;
+            }
+
+            return data;
+        }, '获取患者所有数据');
+    }
+
+    // 保存患者数据（用于表单保存）
+    async savePatientData(patientId, phase, formData, isCompleted) {
+        // 宽表结构：直接更新 patients 表的相应字段
+        return this.retryOperation(async () => {
+            const { data, error } = await this.supabase
+                .from('patients')
+                .update(formData)
+                .eq('id', patientId)
                 .select()
                 .single();
 
             if (error) {
-                console.error('保存数据失败:', error);
+                console.error('保存患者数据失败:', error);
                 throw error;
             }
+
+            this.clearCache();
             return data;
         }, '保存患者数据');
     }
 
-    // 获取患者数据（带重试）
+    // 获取患者某个阶段的数据
     async getPatientData(patientId, phase) {
-        return this.retryOperation(async () => {
-            const { data, error } = await this.supabase
-                .from('patient_data')
-                .select('*')
-                .eq('patient_id', patientId)
-                .eq('phase', phase)
-                .single();
-
-            if (error && error.code !== 'PGRST116') {  // PGRST116 = 未找到记录
-                console.error('获取数据失败:', error);
-                throw error;
-            }
-            return data;
-        }, '获取患者数据');
+        // 宽表结构：返回整个患者记录，由调用方筛选需要的字段
+        return this.getPatient(patientId);
     }
 
-    // 获取患者所有阶段数据（带重试）
-    async getAllPatientData(patientId) {
-        return this.retryOperation(async () => {
-            const { data, error } = await this.supabase
-                .from('patient_data')
-                .select('*')
-                .eq('patient_id', patientId);
+    // ========== 今日任务计算 ==========
+    async getTodayTasks() {
+        const patients = await this.getAllPatients();
+        const tasks = {
+            urgent: [],
+            upcoming: [],
+            completed: []
+        };
 
-            if (error) {
-                console.error('获取所有数据失败:', error);
-                throw error;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        for (const patient of patients) {
+            // 检查每个阶段的完成情况
+            const phases = [
+                { id: 'T0', name: 'T0 术前基线', checkField: 't0_mmse_total', offset: null },
+                { id: 'POD1', name: 'POD1 术后第1天', checkField: 'pod1_cam_delirium', offset: 1 },
+                { id: 'POD3', name: 'POD3 术后第3天', checkField: 'pod3_mmse', offset: 3 },
+                { id: 'POD7', name: 'POD7 术后第7天', checkField: 'pod7_mmse', offset: 7 },
+                { id: 'POD14', name: 'POD14 术后第14天', checkField: 'pod14_mmse_short', offset: 14 },
+                { id: 'POD30', name: 'POD30 术后第30天', checkField: 'pod30_mmse', offset: 30 }
+            ];
+
+            // 获取患者完整数据
+            const fullPatient = await this.getPatient(patient.id);
+
+            for (const phase of phases) {
+                // 检查该阶段是否已完成（关键字段是否有数据）
+                const isCompleted = fullPatient[phase.checkField] !== null && fullPatient[phase.checkField] !== undefined;
+
+                if (isCompleted) {
+                    continue;  // 已完成，跳过
+                }
+
+                // 计算到期日期
+                let dueDate;
+                if (phase.id === 'T0') {
+                    dueDate = new Date(fullPatient.enrollment_date || today);
+                } else {
+                    if (!fullPatient.surgery_date) {
+                        continue;  // 没有手术日期，无法计算术后阶段
+                    }
+                    dueDate = new Date(fullPatient.surgery_date);
+                    dueDate.setDate(dueDate.getDate() + phase.offset);
+                }
+                dueDate.setHours(0, 0, 0, 0);
+
+                const daysDiff = Math.floor((dueDate - today) / (1000 * 60 * 60 * 24));
+
+                if (daysDiff <= 0) {
+                    // 紧急任务
+                    tasks.urgent.push({
+                        patient: fullPatient,
+                        phase: phase.id,
+                        phaseName: phase.name,
+                        dueDate: dueDate.toISOString().split('T')[0],
+                        daysOverdue: Math.abs(daysDiff),
+                        status: 'urgent'
+                    });
+                    break;  // 只显示最紧急的一个阶段
+                } else if (daysDiff <= 2) {
+                    // 即将到期
+                    tasks.upcoming.push({
+                        patient: fullPatient,
+                        phase: phase.id,
+                        phaseName: phase.name,
+                        dueDate: dueDate.toISOString().split('T')[0],
+                        daysRemaining: daysDiff,
+                        status: 'upcoming'
+                    });
+                    break;  // 只显示最近的一个阶段
+                }
+                break;  // 找到第一个未完成的阶段后停止
             }
-            return data;
-        }, '获取所有患者数据');
+        }
+
+        return tasks;
     }
 }
 
 // 创建全局数据库实例
-const db = new DatabaseOptimized();
+window.db = new DatabaseOptimized();

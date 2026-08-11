@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
@@ -426,13 +426,6 @@
     <div class="header">
         <h1>POCD研究 <em>数据采集</em></h1>
         <p>Research Institute of Anesthesiology and Perioperative Medicine, Hangzhou Medical College, Hangzhou, Zhejiang, China.</p>
-        <div style="margin-top: 12px; display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 13px; color: #5C635D;">
-                <span style="font-weight: 500; color: #C4612F;" id="user-name">-</span>
-                <span style="margin-left: 8px; font-size: 12px;" id="user-role-badge">-</span>
-            </span>
-            <a href="profile.html" style="color: #C4612F; text-decoration: none; font-size: 13px; font-weight: 500;">个人中心 →</a>
-        </div>
     </div>
 
     <div id="app"></div>
@@ -455,54 +448,10 @@
             });
         }
     </script>
-    <script src="config.js?v=2.5"></script>
-    <script src="database-optimized.js?v=3.2"></script>
-    <script src="auth.js?v=2.5"></script>
-    <script src="fields-complete-v3.js?v=3.0"></script>
-    <script src="app-v2.1-complete.js?v=3.0"></script>
-
-    <script>
-        // 页面加载时验证登录状态
-        (async () => {
-            try {
-                await db.initialize();
-                const isLoggedIn = await auth.init();
-
-                if (!isLoggedIn) {
-                    // 未登录，跳转到登录页
-                    window.location.href = 'login.html';
-                    return;
-                }
-
-                // 显示用户信息
-                document.getElementById('user-name').textContent = auth.currentUser.username;
-                document.getElementById('user-role-badge').textContent = auth.getRoleDisplayName();
-
-                // 初始化应用
-                if (typeof app !== 'undefined') {
-                    app.init();
-                }
-
-            } catch (error) {
-                console.error('初始化失败:', error);
-                alert('系统初始化失败，请刷新页面重试');
-            }
-        })();
-
-        // 根据权限控制按钮显示
-        function checkPermissions() {
-            // 暂时禁用权限检查，所有登录用户都显示按钮
-            const fab = document.querySelector('.fab');
-            if (fab && auth.currentUser) {
-                fab.style.display = 'block';
-                console.log('+ 按钮已显示，用户:', auth.currentUser.username, '角色:', auth.currentUser.role);
-            }
-        }
-
-        // 监听应用初始化完成
-        window.addEventListener('load', () => {
-            setTimeout(checkPermissions, 500);
-        });
-    </script>
+    <script src="config.js?v=2.4"></script>
+    <script src="database-optimized.js?v=2.4"></script>
+    <script src="fields-complete.js?v=2.4"></script>
+    <script src="app-v2.1-complete.js?v=2.4"></script>
 </body>
 </html>
+
