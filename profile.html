@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>个人中心 - POCD研究数据采集系统</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #F7F4EF;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1F2421 0%, #2d3330 100%);
+            color: white;
+            padding: 32px 24px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 24px rgba(31, 36, 33, 0.15);
+        }
+
+        .header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+            font-weight: 400;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+
+        .header h1 em {
+            font-style: italic;
+            color: #C4612F;
+        }
+
+        .header p {
+            font-size: 13px;
+            opacity: 0.7;
+            font-weight: 300;
+        }
+
+        .header .back-link {
+            display: inline-block;
+            margin-top: 12px;
+            color: #C4612F;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .profile-card {
+            background: #FFFFFF;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 2px 12px rgba(31, 36, 33, 0.06);
+            margin-bottom: 24px;
+        }
+
+        .profile-card h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 20px;
+            font-weight: 400;
+            color: #1F2421;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #E7E1D7;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid #F7F4EF;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-size: 14px;
+            color: #5C635D;
+            font-weight: 400;
+        }
+
+        .info-value {
+            font-size: 15px;
+            color: #1F2421;
+            font-weight: 500;
+        }
+
+        .role-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 500;
+            background: #F2E3D6;
+            color: #C4612F;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1F2421;
+            margin-bottom: 8px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 15px;
+            color: #1F2421;
+            background: #FBF9F5;
+            border: 1px solid #E7E1D7;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #C4612F;
+            background: #FFFFFF;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            font-size: 15px;
+            font-weight: 500;
+            border-radius: 999px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #C4612F;
+            color: #FFFFFF;
+        }
+
+        .btn-primary:hover {
+            background: #A94E22;
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: #FFFFFF;
+            color: #C4612F;
+            border: 1px solid #E7E1D7;
+        }
+
+        .btn-danger:hover {
+            background: #FFF3E0;
+        }
+
+        .btn:disabled {
+            background: #E7E1D7;
+            color: #5C635D;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .success-message,
+        .error-message {
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .success-message {
+            background: #E8F5E9;
+            border-left: 3px solid #4CAF50;
+            color: #1B5E20;
+        }
+
+        .error-message {
+            background: #FFF3E0;
+            border-left: 3px solid #C4612F;
+            color: #1F2421;
+        }
+
+        .success-message.show,
+        .error-message.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>个人<em>中心</em></h1>
+        <p>User Profile & Settings</p>
+        <a href="index.html" class="back-link">← 返回主页</a>
+    </div>
+
+    <div class="container">
+        <!-- 用户信息卡片 -->
+        <div class="profile-card">
+            <h2>用户信息</h2>
+            <div class="info-row">
+                <span class="info-label">账号</span>
+                <span class="info-value" id="display-username">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">角色</span>
+                <span class="role-badge" id="display-role">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">登录状态</span>
+                <span class="info-value" style="color: #4CAF50;">✓ 已登录</span>
+            </div>
+        </div>
+
+        <!-- 修改密码卡片 -->
+        <div class="profile-card">
+            <h2>修改密码</h2>
+
+            <div class="success-message" id="success-message"></div>
+            <div class="error-message" id="error-message"></div>
+
+            <form id="change-password-form">
+                <div class="form-group">
+                    <label for="old-password">当前密码</label>
+                    <input type="password" id="old-password" required autocomplete="current-password" placeholder="输入当前密码">
+                </div>
+
+                <div class="form-group">
+                    <label for="new-password">新密码</label>
+                    <input type="password" id="new-password" required autocomplete="new-password" placeholder="输入新密码（至少6位）" minlength="6">
+                </div>
+
+                <div class="form-group">
+                    <label for="confirm-password">确认新密码</label>
+                    <input type="password" id="confirm-password" required autocomplete="new-password" placeholder="再次输入新密码">
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" class="btn btn-primary" id="submit-btn">修改密码</button>
+                    <button type="button" class="btn btn-danger" onclick="logout()">退出登录</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js?v=2.5"></script>
+    <script src="database-optimized.js?v=2.5"></script>
+    <script src="auth.js?v=2.5"></script>
+
+    <script>
+        // 页面加载时验证登录状态
+        (async () => {
+            try {
+                await db.initialize();
+                const isLoggedIn = await auth.init();
+
+                if (!isLoggedIn) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                // 显示用户信息
+                document.getElementById('display-username').textContent = auth.currentUser.username;
+                document.getElementById('display-role').textContent = auth.getRoleDisplayName();
+
+            } catch (error) {
+                console.error('初始化失败:', error);
+                alert('系统初始化失败，请刷新页面重试');
+            }
+        })();
+
+        // 修改密码表单提交
+        document.getElementById('change-password-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const oldPassword = document.getElementById('old-password').value;
+            const newPassword = document.getElementById('new-password').value;
+            const confirmPassword = document.getElementById('confirm-password').value;
+
+            const successMessage = document.getElementById('success-message');
+            const errorMessage = document.getElementById('error-message');
+            const submitBtn = document.getElementById('submit-btn');
+
+            // 隐藏消息
+            successMessage.classList.remove('show');
+            errorMessage.classList.remove('show');
+
+            // 验证新密码
+            if (newPassword.length < 6) {
+                showError('新密码至少需要6位');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                showError('两次输入的新密码不一致');
+                return;
+            }
+
+            if (oldPassword === newPassword) {
+                showError('新密码不能与当前密码相同');
+                return;
+            }
+
+            // 提交修改
+            submitBtn.disabled = true;
+            submitBtn.textContent = '修改中...';
+
+            try {
+                await auth.changePassword(oldPassword, newPassword);
+
+                // 成功
+                showSuccess('密码修改成功！');
+                document.getElementById('change-password-form').reset();
+
+            } catch (error) {
+                console.error('修改密码失败:', error);
+                showError(error.message || '修改密码失败，请检查当前密码是否正确');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '修改密码';
+            }
+        });
+
+        // 显示成功消息
+        function showSuccess(message) {
+            const successMessage = document.getElementById('success-message');
+            successMessage.textContent = message;
+            successMessage.classList.add('show');
+        }
+
+        // 显示错误消息
+        function showError(message) {
+            const errorMessage = document.getElementById('error-message');
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+        }
+
+        // 退出登录
+        function logout() {
+            if (confirm('确定要退出登录吗？')) {
+                auth.logout();
+            }
+        }
+    </script>
+</body>
+</html>
