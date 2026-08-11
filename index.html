@@ -442,16 +442,28 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         // 强制清除旧版本缓存
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                for(let registration of registrations) {
-                    registration.unregister();
-                }
-            });
+        const CURRENT_VERSION = '4.0';
+        const cachedVersion = localStorage.getItem('app_version');
+
+        if (cachedVersion !== CURRENT_VERSION) {
+            console.log('检测到新版本，清除缓存...');
+            localStorage.setItem('app_version', CURRENT_VERSION);
+
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                    for(let registration of registrations) {
+                        registration.unregister();
+                    }
+                });
+            }
+
             caches.keys().then(function(names) {
                 for(let name of names) {
                     caches.delete(name);
                 }
+            }).then(() => {
+                // 强制刷新页面
+                window.location.reload(true);
             });
         }
     </script>
