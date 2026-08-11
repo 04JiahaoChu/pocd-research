@@ -271,6 +271,26 @@ class DatabaseOptimized {
         }, '删除患者');
     }
 
+    // 获取患者所有阶段数据（新增方法）
+    async getAllPatientData(patientId) {
+        // 因为使用的是宽表结构，所有数据都在 patients 表中
+        // 这个方法返回完整的患者记录
+        return this.retryOperation(async () => {
+            const { data, error } = await this.supabase
+                .from('patients')
+                .select('*')
+                .eq('id', patientId)
+                .single();
+
+            if (error) {
+                console.error('获取患者数据失败:', error);
+                throw error;
+            }
+
+            return data;
+        }, '获取患者所有数据');
+    }
+
     // ========== 今日任务计算 ==========
     async getTodayTasks() {
         const patients = await this.getAllPatients();
