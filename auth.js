@@ -40,8 +40,13 @@ class Auth {
     // 登录
     async login(username, password) {
         try {
+            // 确保数据库已初始化
+            if (!window.db || !window.db.supabase) {
+                throw new Error('数据库未初始化');
+            }
+
             // 调用数据库验证函数
-            const { data, error } = await db.supabase.rpc('verify_login', {
+            const { data, error } = await window.db.supabase.rpc('verify_login', {
                 p_username: username,
                 p_password: password
             });
@@ -57,7 +62,7 @@ class Auth {
             const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7天过期
 
             // 保存会话到数据库
-            await db.supabase
+            await window.db.supabase
                 .from('user_sessions')
                 .insert({
                     user_id: user.user_id,
@@ -98,7 +103,12 @@ class Auth {
     // 修改密码
     async changePassword(oldPassword, newPassword) {
         try {
-            const { data, error } = await db.supabase.rpc('change_password', {
+            // 确保数据库已初始化
+            if (!window.db || !window.db.supabase) {
+                throw new Error('数据库未初始化');
+            }
+
+            const { data, error } = await window.db.supabase.rpc('change_password', {
                 p_user_id: this.currentUser.user_id,
                 p_old_password: oldPassword,
                 p_new_password: newPassword
