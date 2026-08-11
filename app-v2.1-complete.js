@@ -266,6 +266,20 @@ const app = {
     },
 
     async renderPatientDetail() {
+        // 检查 currentPatient 是否存在
+        if (!this.currentPatient) {
+            console.error('renderPatientDetail: currentPatient 为 null');
+            return `
+                <div class="container">
+                    <div class="empty-state">
+                        <h3>患者数据加载失败</h3>
+                        <p>请返回主页重试</p>
+                        <button class="btn btn-primary" onclick="app.backToTasks()">返回主页</button>
+                    </div>
+                </div>
+            `;
+        }
+
         const patient = this.currentPatient;
         const allData = await db.getAllPatientData(patient.id);
 
@@ -537,10 +551,19 @@ const app = {
     },
 
     async goToPatient(id, phase = 'basic_info') {
-        this.currentPatient = await db.getPatient(id);
-        this.currentView = 'patient-detail';
-        this.currentPhase = phase;
-        await this.render();
+        try {
+            this.currentPatient = await db.getPatient(id);
+            if (!this.currentPatient) {
+                throw new Error('患者数据不存在');
+            }
+            this.currentView = 'patient-detail';
+            this.currentPhase = phase;
+            await this.render();
+        } catch (error) {
+            console.error('加载患者失败:', error);
+            alert('加载患者失败：' + error.message);
+            this.backToTasks();
+        }
     },
 
     switchPhase(phase) {
@@ -567,10 +590,10 @@ const app = {
                 ward: formData.ward,
                 bed_no: formData.bed_no,
                 phone: formData.phone,
-                enroll_date: formData.enroll_date,
+                enrollment_date: formData.enrollment_date,
                 surgery_date: formData.surgery_date,
                 has_l3_ct: formData.has_l3_ct,
-                sleep_intervention_triggered: formData.sleep_intervention_triggered,
+                sleep_correction_triggered: formData.sleep_correction_triggered,
                 age: formData.age,
                 gender: formData.gender,
                 education_years: formData.education_years,
@@ -626,9 +649,14 @@ const app = {
         try {
             await db.deletePatient(id);
             alert('患者已删除');
-            // 强制清除缓存后返回
+
+            // 清理状态
             db.clearCache();
-            this.backToTasks();
+            this.currentPatient = null;
+            this.currentView = 'tasks';
+
+            // 重新渲染
+            await this.render();
         } catch (error) {
             console.error('删除患者失败:', error);
             alert('删除失败：' + error.message);
