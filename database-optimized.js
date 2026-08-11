@@ -177,31 +177,20 @@ class DatabaseOptimized {
     // 创建患者（带重试）
     async createPatient(patientData) {
         return this.retryOperation(async () => {
-            // 调试：打印当前用户信息
-            console.log('当前用户对象:', window.auth ? window.auth.currentUser : 'auth不存在');
-
-            // 获取下一个研究编号
-            const { data: nextId, error: idError } = await this.supabase
-                .rpc('get_next_study_id');
-
-            if (idError) {
-                console.error('获取研究编号失败:', idError);
-                throw idError;
-            }
-
             // 获取user_id
             let userId = null;
             if (window.auth && window.auth.currentUser) {
                 userId = window.auth.currentUser.user_id || window.auth.currentUser.id;
-                console.log('提取的user_id:', userId);
-            } else {
-                console.error('无法获取当前用户！');
             }
 
             const insertData = {
                 user_id: userId,
-                study_id: nextId,
+                study_id: patientData.study_id,
                 name: patientData.name || '',
+                medical_record_no: patientData.medical_record_no || null,
+                ward: patientData.ward || null,
+                bed_no: patientData.bed_no || null,
+                phone: patientData.phone || null,
                 age: patientData.age || null,
                 gender: patientData.gender || null,
                 enrollment_date: patientData.enrollment_date || new Date().toISOString().split('T')[0],

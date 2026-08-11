@@ -157,15 +157,25 @@ const app = {
 
         const list = await Promise.all(patients.map(async (p) => {
             const allData = await db.getAllPatientData(p.id);
-            const phases = ['T0', 'POD1', 'POD3', 'POD7', 'POD14', 'POD30'];
-            const completed = allData.filter(d => d.completed).length;
-            const progress = `${completed}/${phases.length}`;
+
+            // 检查各阶段是否完成（检查关键字段是否有值）
+            const phaseChecks = [
+                { phase: 'T0', field: 't0_mmse_total' },
+                { phase: 'POD1', field: 'pod1_cam_delirium' },
+                { phase: 'POD3', field: 'pod3_mmse' },
+                { phase: 'POD7', field: 'pod7_mmse' },
+                { phase: 'POD14', field: 'pod14_mmse_short' },
+                { phase: 'POD30', field: 'pod30_mmse' }
+            ];
+
+            const completed = phaseChecks.filter(check => allData[check.field] !== null && allData[check.field] !== undefined).length;
+            const progress = `${completed}/${phaseChecks.length}`;
 
             return `
                 <div class="task-item" onclick="app.goToPatient('${p.id}')">
                     <div class="task-content">
                         <h3>${p.study_id} ${p.name ? '- ' + p.name : ''}</h3>
-                        <p>${p.ward || ''} ${p.bed_no || ''} | 入组：${p.enroll_date || '未设置'} | 手术：${p.surgery_date || '未设置'} | 进度：${progress}</p>
+                        <p>入组：${p.enrollment_date || '未设置'} | 手术：${p.surgery_date || '未设置'} | 进度：${progress}</p>
                     </div>
                     <button class="btn btn-secondary btn-small" onclick="event.stopPropagation(); app.goToPatient('${p.id}')">录入</button>
                 </div>
@@ -282,6 +292,10 @@ const app = {
                     <span class="eyebrow">Patient</span>
                     <h2>${patient.study_id}</h2>
                     <p><strong>姓名：</strong>${patient.name || '未填写'}</p>
+                    <p><strong>病案号：</strong>${patient.medical_record_no || '未填写'}</p>
+                    <p><strong>病区：</strong>${patient.ward || '未填写'}</p>
+                    <p><strong>床号：</strong>${patient.bed_no || '未填写'}</p>
+                    <p><strong>联系电话：</strong>${patient.phone || '未填写'}</p>
                     <p><strong>入组日期：</strong>${patient.enrollment_date || '未设置'}</p>
                     <p><strong>手术日期：</strong>${patient.surgery_date || '未设置'}</p>
                     <button class="btn btn-danger" onclick="app.deletePatient('${patient.id}')" style="margin-top: 1rem;">删除患者</button>
@@ -483,21 +497,29 @@ const app = {
     },
 
     async submitNewPatient() {
-        // 只读取表单中实际存在的字段
+        // 读取表单中所有字段
         const studyId = document.getElementById('new_study_id')?.value || '';
         const name = document.getElementById('new_name')?.value || '';
+        const medicalRecordNo = document.getElementById('new_medical_record_no')?.value || '';
+        const ward = document.getElementById('new_ward')?.value || '';
+        const bedNo = document.getElementById('new_bed_no')?.value || '';
+        const phone = document.getElementById('new_phone')?.value || '';
         const enrollDate = document.getElementById('new_enroll_date')?.value || '';
         const surgeryDate = document.getElementById('new_surgery_date')?.value || '';
 
         // 验证必填项
-        if (!studyId || !enrollDate || !surgeryDate) {
-            alert('请填写所有必填项：研究编号、入组日期、手术日期');
+        if (!studyId || !medicalRecordNo || !ward || !bedNo || !enrollDate || !surgeryDate) {
+            alert('请填写所有必填项：研究编号、病案号、病区、床号、入组日期、手术日期');
             return;
         }
 
         const patientData = {
             study_id: studyId,
             name: name,
+            medical_record_no: medicalRecordNo,
+            ward: ward,
+            bed_no: bedNo,
+            phone: phone,
             enrollment_date: enrollDate,
             surgery_date: surgeryDate
         };
@@ -506,7 +528,7 @@ const app = {
             const patient = await db.createPatient(patientData);
             if (patient) {
                 alert('患者创建成功！');
-                this.goToPatient(patient.id);
+                await this.goToPatient(patient.id);
             }
         } catch (error) {
             console.error('创建患者失败:', error);
