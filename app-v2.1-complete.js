@@ -499,7 +499,12 @@ const app = {
             phone: document.getElementById('new_phone').value,
             enrollDate: document.getElementById('new_enroll_date').value,
             surgeryDate: document.getElementById('new_surgery_date').value,
-            hasL3Ct: document.getElementById('new_has_l3_ct').value
+            hasL3Ct: document.getElementById('new_has_l3_ct').value,
+            age: document.getElementById('new_age').value,
+            gender: document.getElementById('new_gender').value,
+            education_years: document.getElementById('new_education_years').value,
+            occupation: document.getElementById('new_occupation').value,
+            bmi: document.getElementById('new_bmi').value
         };
 
         if (!patientData.studyId || !patientData.medicalRecordNo || !patientData.ward ||

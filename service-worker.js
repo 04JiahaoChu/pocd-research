@@ -1,10 +1,10 @@
-// Service Worker - 离线支持 V2.3-fix
-const CACHE_NAME = 'pocd-v2.3-fix';
+// Service Worker - 离线支持 V2.4 优化版
+const CACHE_NAME = 'pocd-v2.4';
 const urlsToCache = [
   '/',
   '/index.html',
   '/app-v2.1-complete.js',
-  '/database.js',
+  '/database-optimized.js',
   '/config.js',
   '/fields-complete.js',
   '/manifest.json',
