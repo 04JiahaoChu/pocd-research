@@ -591,23 +591,8 @@ const app = {
         });
 
         if (this.currentPhase === 'basic_info') {
-            // 更新患者基础信息
-            const updated = await db.updatePatient(this.currentPatient.id, {
-                name: formData.name,
-                medical_record_no: formData.medical_record_no,
-                ward: formData.ward,
-                bed_no: formData.bed_no,
-                phone: formData.phone,
-                enrollment_date: formData.enrollment_date,
-                surgery_date: formData.surgery_date,
-                has_l3_ct: formData.has_l3_ct,
-                sleep_correction_triggered: formData.sleep_correction_triggered,
-                age: formData.age,
-                gender: formData.gender,
-                education_years: formData.education_years,
-                occupation: formData.occupation,
-                bmi: formData.bmi
-            });
+            // 更新患者基础信息 - 直接传整个 formData
+            const updated = await db.updatePatient(this.currentPatient.id, formData);
             if (updated) {
                 this.currentPatient = updated;
                 alert('基本信息保存成功！');
