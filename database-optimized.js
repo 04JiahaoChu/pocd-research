@@ -421,4 +421,4 @@ class DatabaseOptimized {
 }
 
 // 创建全局数据库实例
-const db = new DatabaseOptimized();
+window.db = new DatabaseOptimized();
