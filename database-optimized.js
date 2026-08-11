@@ -320,6 +320,110 @@ class DatabaseOptimized {
             return data;
         }, '获取所有患者数据');
     }
+
+    // ========== 今日任务计算 ==========
+
+    async getTodayTasks() {
+        const patients = await this.getAllPatients();
+        const tasks = {
+            urgent: [],      // 🔴 需要立即采集
+            upcoming: [],    // 🟡 即将到期
+            completed: []    // ✅ 今日已完成
+        };
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        for (const patient of patients) {
+            if (!patient.surgery_date) {
+                const t0Data = await this.getPatientData(patient.id, 'T0');
+                if (!t0Data || !t0Data.completed) {
+                    tasks.urgent.push({
+                        patient,
+                        phase: 'T0',
+                        phaseName: 'T0 术前基线',
+                        dueDate: patient.enroll_date,
+                        daysOverdue: this.calculateDaysOverdue(patient.enroll_date, today),
+                        status: 'urgent'
+                    });
+                }
+                continue;
+            }
+
+            const surgeryDate = new Date(patient.surgery_date);
+            surgeryDate.setHours(0, 0, 0, 0);
+
+            const phases = [
+                { id: 'T0', name: 'T0 术前基线', offset: null },
+                { id: 'POD1', name: 'POD1 术后第1天', offset: 1 },
+                { id: 'POD3', name: 'POD3 术后第3天', offset: 3 },
+                { id: 'POD7', name: 'POD7 术后第7天', offset: 7 },
+                { id: 'POD14', name: 'POD14 术后第14天', offset: 14 },
+                { id: 'POD30', name: 'POD30 术后第30天', offset: 30 }
+            ];
+
+            for (const phase of phases) {
+                const phaseData = await this.getPatientData(patient.id, phase.id);
+
+                if (phaseData && phaseData.completed) {
+                    const completedDate = new Date(phaseData.completed_at);
+                    completedDate.setHours(0, 0, 0, 0);
+                    if (completedDate.getTime() === today.getTime()) {
+                        tasks.completed.push({
+                            patient,
+                            phase: phase.id,
+                            phaseName: phase.name,
+                            completedAt: phaseData.completed_at
+                        });
+                    }
+                    continue;
+                }
+
+                let dueDate;
+                if (phase.id === 'T0') {
+                    dueDate = new Date(patient.enroll_date);
+                } else {
+                    dueDate = new Date(surgeryDate);
+                    dueDate.setDate(dueDate.getDate() + phase.offset);
+                }
+                dueDate.setHours(0, 0, 0, 0);
+
+                const daysDiff = Math.floor((dueDate - today) / (1000 * 60 * 60 * 24));
+
+                if (daysDiff <= 0) {
+                    tasks.urgent.push({
+                        patient,
+                        phase: phase.id,
+                        phaseName: phase.name,
+                        dueDate: dueDate.toISOString().split('T')[0],
+                        daysOverdue: Math.abs(daysDiff),
+                        status: 'urgent'
+                    });
+                    break;
+                } else if (daysDiff <= 2) {
+                    tasks.upcoming.push({
+                        patient,
+                        phase: phase.id,
+                        phaseName: phase.name,
+                        dueDate: dueDate.toISOString().split('T')[0],
+                        daysRemaining: daysDiff,
+                        status: 'upcoming'
+                    });
+                    break;
+                }
+                break;
+            }
+        }
+
+        return tasks;
+    }
+
+    calculateDaysOverdue(dueDateStr, today) {
+        const dueDate = new Date(dueDateStr);
+        dueDate.setHours(0, 0, 0, 0);
+        const diff = Math.floor((today - dueDate) / (1000 * 60 * 60 * 24));
+        return Math.max(0, diff);
+    }
 }
 
 // 创建全局数据库实例
