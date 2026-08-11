@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - POCD研究数据采集系统</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #F7F4EF;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-container {
+            background: #FFFFFF;
+            border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(31, 36, 33, 0.08);
+            max-width: 420px;
+            width: 100%;
+            padding: 48px 40px;
+        }
+
+        .logo-section {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo-section h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 28px;
+            font-weight: 400;
+            color: #1F2421;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+
+        .logo-section h1 em {
+            font-style: italic;
+            color: #C4612F;
+        }
+
+        .logo-section p {
+            font-size: 13px;
+            color: #5C635D;
+            font-weight: 300;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1F2421;
+            margin-bottom: 8px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 15px;
+            font-weight: 400;
+            color: #1F2421;
+            background: #FBF9F5;
+            border: 1px solid #E7E1D7;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #C4612F;
+            background: #FFFFFF;
+        }
+
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            font-size: 15px;
+            font-weight: 500;
+            color: #FFFFFF;
+            background: #C4612F;
+            border: none;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 8px;
+        }
+
+        .login-btn:hover {
+            background: #A94E22;
+            transform: translateY(-1px);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .login-btn:disabled {
+            background: #E7E1D7;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .error-message {
+            background: #FFF3E0;
+            border-left: 3px solid #C4612F;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #1F2421;
+            margin-bottom: 24px;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .footer-text {
+            text-align: center;
+            margin-top: 32px;
+            font-size: 12px;
+            color: #5C635D;
+            font-weight: 300;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 16px;
+            font-size: 14px;
+            color: #5C635D;
+        }
+
+        .loading.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo-section">
+            <h1>POCD研究 <em>数据采集</em></h1>
+            <p>Research Institute of Anesthesiology and Perioperative Medicine</p>
+        </div>
+
+        <div class="error-message" id="error-message"></div>
+
+        <form id="login-form">
+            <div class="form-group">
+                <label for="username">账号</label>
+                <input type="text" id="username" name="username" required autocomplete="username" placeholder="输入账号">
+            </div>
+
+            <div class="form-group">
+                <label for="password">密码</label>
+                <input type="password" id="password" name="password" required autocomplete="current-password" placeholder="输入密码">
+            </div>
+
+            <button type="submit" class="login-btn" id="login-btn">登录</button>
+        </form>
+
+        <div class="loading" id="loading">正在登录...</div>
+
+        <div class="footer-text">
+            Hangzhou Medical College, Hangzhou, Zhejiang, China
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js?v=2.5"></script>
+    <script src="database-optimized.js?v=2.5"></script>
+    <script src="auth.js?v=2.5"></script>
+
+    <script>
+        const loginForm = document.getElementById('login-form');
+        const loginBtn = document.getElementById('login-btn');
+        const loading = document.getElementById('loading');
+        const errorMessage = document.getElementById('error-message');
+
+        // 初始化数据库
+        (async () => {
+            try {
+                await db.initialize();
+                console.log('数据库初始化成功');
+            } catch (error) {
+                showError('数据库连接失败，请检查网络');
+            }
+        })();
+
+        // 登录表单提交
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+
+            if (!username || !password) {
+                showError('请输入账号和密码');
+                return;
+            }
+
+            // 显示加载状态
+            loginBtn.disabled = true;
+            loading.classList.add('show');
+            errorMessage.classList.remove('show');
+
+            try {
+                await auth.login(username, password);
+
+                // 登录成功，跳转到主页
+                window.location.href = 'index.html';
+
+            } catch (error) {
+                console.error('登录失败:', error);
+                showError(error.message || '登录失败，请检查账号密码');
+                loginBtn.disabled = false;
+                loading.classList.remove('show');
+            }
+        });
+
+        // 显示错误信息
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('show');
+        }
+    </script>
+</body>
+</html>
