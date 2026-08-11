@@ -490,33 +490,34 @@ const app = {
     },
 
     async submitNewPatient() {
-        const patientData = {
-            studyId: document.getElementById('new_study_id').value,
-            name: document.getElementById('new_name').value,
-            medicalRecordNo: document.getElementById('new_medical_record_no').value,
-            ward: document.getElementById('new_ward').value,
-            bedNo: document.getElementById('new_bed_no').value,
-            phone: document.getElementById('new_phone').value,
-            enrollDate: document.getElementById('new_enroll_date').value,
-            surgeryDate: document.getElementById('new_surgery_date').value,
-            hasL3Ct: document.getElementById('new_has_l3_ct').value,
-            age: document.getElementById('new_age').value,
-            gender: document.getElementById('new_gender').value,
-            education_years: document.getElementById('new_education_years').value,
-            occupation: document.getElementById('new_occupation').value,
-            bmi: document.getElementById('new_bmi').value
-        };
+        // 只读取表单中实际存在的字段
+        const studyId = document.getElementById('new_study_id')?.value || '';
+        const name = document.getElementById('new_name')?.value || '';
+        const enrollDate = document.getElementById('new_enroll_date')?.value || '';
+        const surgeryDate = document.getElementById('new_surgery_date')?.value || '';
 
-        if (!patientData.studyId || !patientData.medicalRecordNo || !patientData.ward ||
-            !patientData.bedNo || !patientData.enrollDate || !patientData.surgeryDate) {
-            alert('请填写所有必填项（标*的字段）');
+        // 验证必填项
+        if (!studyId || !enrollDate || !surgeryDate) {
+            alert('请填写所有必填项：研究编号、入组日期、手术日期');
             return;
         }
 
-        const patient = await db.createPatient(patientData);
-        if (patient) {
-            alert('患者创建成功！');
-            this.goToPatient(patient.id);
+        const patientData = {
+            study_id: studyId,
+            name: name,
+            enrollment_date: enrollDate,
+            surgery_date: surgeryDate
+        };
+
+        try {
+            const patient = await db.createPatient(patientData);
+            if (patient) {
+                alert('患者创建成功！');
+                this.goToPatient(patient.id);
+            }
+        } catch (error) {
+            console.error('创建患者失败:', error);
+            alert('创建失败：' + error.message);
         }
     },
 
