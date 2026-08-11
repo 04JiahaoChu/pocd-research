@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#C4612F">
+    <title>POCD研究数据采集</title>
+    <link rel="manifest" href="manifest.json">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-weight: 300;
+            background: #F7F4EF;
+            padding-bottom: 80px;
+            color: #1F2421;
+        }
+
+        .header {
+            background: rgba(251, 249, 245, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid #E7E1D7;
+            padding: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px;
+            font-weight: 400;
+            letter-spacing: -0.02em;
+            margin-bottom: 4px;
+            color: #1F2421;
+        }
+
+        .header h1 em {
+            font-style: italic;
+            color: #C4612F;
+        }
+
+        .header p {
+            font-size: 13px;
+            color: #5C635D;
+            font-weight: 400;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+
+        .card {
+            background: #FFFFFF;
+            border-radius: 12px;
+            border: 1px solid #E7E1D7;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(31, 36, 33, 0.04);
+            transition: all 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(31, 36, 33, 0.08);
+        }
+
+        .card h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 18px;
+            font-weight: 400;
+            letter-spacing: -0.01em;
+            color: #1F2421;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #E7E1D7;
+        }
+
+        .eyebrow {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #F2E3D6;
+            color: #C4612F;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 12px;
+        }
+
+        .patient-list {
+            list-style: none;
+        }
+
+        .task-item {
+            padding: 16px;
+            border: 1px solid #E7E1D7;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            background: #FBF9F5;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .task-item:active {
+            transform: scale(0.98);
+        }
+
+        .task-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .task-content {
+            flex: 1;
+        }
+
+        .task-content h3 {
+            font-size: 15px;
+            font-weight: 500;
+            color: #1F2421;
+            margin-bottom: 4px;
+        }
+
+        .task-content p {
+            font-size: 13px;
+            color: #5C635D;
+        }
+
+        .task-urgent {
+            border-left: 3px solid #C4612F;
+            background: #FFF9F5;
+        }
+
+        .task-upcoming {
+            border-left: 3px solid #E9A854;
+            background: #FFFCF5;
+        }
+
+        .task-completed {
+            border-left: 3px solid #6B8E6F;
+            background: #F5FAF6;
+            opacity: 0.8;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .badge-urgent {
+            background: #C4612F;
+            color: #FFFFFF;
+        }
+
+        .badge-upcoming {
+            background: #F2E3D6;
+            color: #A94E22;
+        }
+
+        .badge-completed {
+            background: #E8F3E9;
+            color: #4A6B4D;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 999px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .btn-primary {
+            background: #C4612F;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #A94E22;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(196, 97, 47, 0.25);
+        }
+
+        .btn-secondary {
+            background: #FBF9F5;
+            color: #C4612F;
+            border: 1px solid #E7E1D7;
+        }
+
+        .btn-secondary:hover {
+            background: #F2E3D6;
+        }
+
+        .btn-danger {
+            background: #D9534F;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #C9302C;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(217, 83, 79, 0.25);
+        }
+
+        .btn-small {
+            padding: 6px 16px;
+            font-size: 13px;
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        .fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #C4612F;
+            color: white;
+            border: none;
+            font-size: 28px;
+            box-shadow: 0 4px 16px rgba(196, 97, 47, 0.3);
+            cursor: pointer;
+            z-index: 99;
+            transition: all 0.2s ease;
+        }
+
+        .fab:hover {
+            background: #A94E22;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(196, 97, 47, 0.4);
+        }
+
+        .fab:active {
+            transform: scale(0.92);
+        }
+
+        .phase-nav {
+            display: flex;
+            overflow-x: auto;
+            gap: 8px;
+            padding: 12px 16px;
+            background: rgba(251, 249, 245, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid #E7E1D7;
+            position: sticky;
+            top: 90px;
+            z-index: 99;
+        }
+
+        .phase-btn {
+            padding: 8px 16px;
+            border: 1px solid #E7E1D7;
+            border-radius: 999px;
+            background: #FFFFFF;
+            color: #5C635D;
+            font-size: 13px;
+            font-weight: 500;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .phase-btn:hover {
+            border-color: #C4612F;
+            color: #C4612F;
+        }
+
+        .phase-btn.active {
+            background: #C4612F;
+            color: white;
+            border-color: #C4612F;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1F2421;
+            margin-bottom: 8px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #E7E1D7;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 300;
+            background: #FFFFFF;
+            transition: all 0.2s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #C4612F;
+            box-shadow: 0 0 0 3px rgba(196, 97, 47, 0.1);
+        }
+
+        .form-hint {
+            font-size: 12px;
+            color: #5C635D;
+            margin-top: 6px;
+        }
+
+        .required {
+            color: #C4612F;
+        }
+
+        .bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(251, 249, 245, 0.95);
+            backdrop-filter: blur(12px);
+            padding: 12px 16px;
+            border-top: 1px solid #E7E1D7;
+            display: flex;
+            gap: 12px;
+        }
+
+        .bottom-bar .btn {
+            flex: 1;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(31, 36, 33, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 28px;
+            max-width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 12px 48px rgba(31, 36, 33, 0.15);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 500;
+            margin-left: 8px;
+        }
+
+        .badge-success {
+            background: #E8F3E9;
+            color: #4A6B4D;
+        }
+
+        .badge-warning {
+            background: #FFF3CD;
+            color: #856404;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #5C635D;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.2;
+            color: #C4612F;
+        }
+
+        .empty-state h3 {
+            font-family: 'Playfair Display', serif;
+            font-size: 20px;
+            font-weight: 400;
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>POCD研究 <em>数据采集</em></h1>
+        <p>Research Institute of Anesthesiology and Perioperative Medicine, Hangzhou Medical College, Hangzhou, Zhejiang, China.</p>
+    </div>
+
+    <div id="app"></div>
+
+    <button class="fab" onclick="app.showNewPatient()">+</button>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // 强制清除旧版本缓存
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                }
+            });
+            caches.keys().then(function(names) {
+                for(let name of names) {
+                    caches.delete(name);
+                }
+            });
+        }
+    </script>
+    <script src="config.js?v=2.4"></script>
+    <script src="database-optimized.js?v=2.4"></script>
+    <script src="fields-complete.js?v=2.4"></script>
+    <script src="app-v2.1-complete.js?v=2.4"></script>
+</body>
+</html>
