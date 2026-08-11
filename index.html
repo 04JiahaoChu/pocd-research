@@ -491,9 +491,11 @@
 
         // 根据权限控制按钮显示
         function checkPermissions() {
+            // 暂时禁用权限检查，所有登录用户都显示按钮
             const fab = document.querySelector('.fab');
-            if (fab && !auth.hasPermission('create')) {
-                fab.style.display = 'none';
+            if (fab && auth.currentUser) {
+                fab.style.display = 'block';
+                console.log('+ 按钮已显示，用户:', auth.currentUser.username, '角色:', auth.currentUser.role);
             }
         }
 
