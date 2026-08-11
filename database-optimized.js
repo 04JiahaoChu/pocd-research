@@ -122,7 +122,7 @@ class DatabaseOptimized {
         return this.retryOperation(async () => {
             const { data, error } = await this.supabase
                 .from('patients')
-                .select('id, patient_id, name, age, gender, surgery_date, surgery_type, baseline_completed, pod1_completed, pod3_completed, pod7_completed, pod14_completed, pod30_completed')
+                .select('id, study_id, name, age, gender, surgery_date, surgery_type, baseline_completed, pod1_completed, pod3_completed, pod7_completed, pod14_completed, pod30_completed')
                 .order('created_at', { ascending: false });
 
             if (error) {
@@ -132,15 +132,9 @@ class DatabaseOptimized {
                 throw error;
             }
 
-            // 将 patient_id 映射为 study_id 以便前端使用
-            const mappedData = data.map(p => ({
-                ...p,
-                study_id: p.patient_id
-            }));
-
             // 更新缓存
-            this.setCachedPatients(mappedData);
-            return mappedData;
+            this.setCachedPatients(data);
+            return data;
         }, '获取患者列表');
     }
 
@@ -183,11 +177,7 @@ class DatabaseOptimized {
                 throw error;
             }
 
-            // 将 patient_id 映射为 study_id 以便前端使用
-            return {
-                ...data,
-                study_id: data.patient_id
-            };
+            return data;
         }, '获取患者详情');
     }
 
@@ -197,7 +187,7 @@ class DatabaseOptimized {
             const { data, error } = await this.supabase
                 .from('patients')
                 .insert([{
-                    patient_id: patientData.studyId || patientData.patient_id,
+                    study_id: patientData.studyId || patientData.study_id,
                     name: patientData.name || '',
                     age: patientData.age || null,
                     gender: patientData.gender || null,
