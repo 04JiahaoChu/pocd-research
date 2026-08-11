@@ -578,7 +578,9 @@ const app = {
         fields.forEach(field => {
             const element = document.getElementById(field.name);
             if (element) {
-                formData[field.name] = element.value;
+                // 空字符串转为 null，避免数据库报错
+                const value = element.value;
+                formData[field.name] = value === '' ? null : value;
             }
         });
 
