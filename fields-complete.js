@@ -33,9 +33,11 @@ const FIELD_DEFINITIONS = {
         { name: 'mmse_delayed_recall', label: 'MMSE-延迟回忆（满分3）', type: 'select', options: ['0', '1', '2', '3'], hint: '回忆3个词' },
         { name: 'mmse_naming', label: 'MMSE-命名（满分2）', type: 'select', options: ['0', '1', '2'], hint: '手表和铅笔' },
         { name: 'mmse_repetition', label: 'MMSE-复述（满分1）', type: 'select', options: ['0', '1'], hint: '四十四只石狮子' },
-        { name: 'mmse_comprehension', label: 'MMSE-阅读理解（满分3）', type: 'select', options: ['0', '1', '2', '3'], hint: '三步命令' },
-        { name: 'mmse_visuospatial', label: 'MMSE-视空间（满分1）', type: 'select', options: ['0', '1'], hint: '画五边形' },
-        { name: 'mmse_total', label: 'MMSE总分（满分30）', type: 'number', readonly: true, autoCalculate: true, hint: '自动计算：5+5+3+5+3+2+1+3+1' },
+        { name: 'mmse_comprehension', label: 'MMSE-理解（满分3）', type: 'select', options: ['0', '1', '2', '3'], hint: '三步命令' },
+        { name: 'mmse_reading', label: 'MMSE-阅读（满分1）', type: 'select', options: ['0', '1'], hint: '闭上眼睛' },
+        { name: 'mmse_writing', label: 'MMSE-书写（满分1）', type: 'select', options: ['0', '1'], hint: '写一个完整句子' },
+        { name: 'mmse_drawing', label: 'MMSE-结构（满分1）', type: 'select', options: ['0', '1'], hint: '画五边形' },
+        { name: 'mmse_total', label: 'MMSE总分（满分30）', type: 'number', readonly: true, autoCalculate: true, hint: '自动计算：5+5+3+5+3+2+1+3+1+1+1' },
 
         // 认知量表 - MoCA完整分项（分项在前，总分在后，自动计算）
         { name: 'moca_visuospatial', label: 'MoCA-视空间执行（满分5）', type: 'select', options: ['0', '1', '2', '3', '4', '5'], hint: '连线1+立方体1+钟表3' },
