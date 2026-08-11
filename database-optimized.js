@@ -132,9 +132,15 @@ class DatabaseOptimized {
                 throw error;
             }
 
+            // 将 patient_id 映射为 study_id 以便前端使用
+            const mappedData = data.map(p => ({
+                ...p,
+                study_id: p.patient_id
+            }));
+
             // 更新缓存
-            this.setCachedPatients(data);
-            return data;
+            this.setCachedPatients(mappedData);
+            return mappedData;
         }, '获取患者列表');
     }
 
@@ -176,7 +182,12 @@ class DatabaseOptimized {
                 console.error('获取患者失败:', error);
                 throw error;
             }
-            return data;
+
+            // 将 patient_id 映射为 study_id 以便前端使用
+            return {
+                ...data,
+                study_id: data.patient_id
+            };
         }, '获取患者详情');
     }
 
@@ -186,11 +197,11 @@ class DatabaseOptimized {
             const { data, error } = await this.supabase
                 .from('patients')
                 .insert([{
-                    patient_id: patientData.patient_id,
+                    patient_id: patientData.studyId || patientData.patient_id,
                     name: patientData.name || '',
                     age: patientData.age || null,
                     gender: patientData.gender || null,
-                    surgery_date: patientData.surgery_date,
+                    surgery_date: patientData.surgeryDate || patientData.surgery_date,
                     surgery_type: patientData.surgery_type || null,
                     asa_class: patientData.asa_class || null,
                     education_years: patientData.education_years || null,
