@@ -11,7 +11,7 @@ class DatabaseOptimized {
     }
 
     // 初始化数据库连接（带重试）
-    async init() {
+    async initialize() {
         for (let i = 0; i < this.retryCount; i++) {
             try {
                 this.supabase = supabase.createClient(
@@ -19,9 +19,8 @@ class DatabaseOptimized {
                     SUPABASE_CONFIG.anonKey,
                     {
                         auth: {
-                            persistSession: true,
-                            autoRefreshToken: true,
-                            detectSessionInUrl: true
+                            persistSession: false,  // 使用自定义会话管理
+                            autoRefreshToken: false
                         },
                         global: {
                             headers: {
@@ -30,11 +29,6 @@ class DatabaseOptimized {
                         },
                         db: {
                             schema: 'public'
-                        },
-                        realtime: {
-                            params: {
-                                eventsPerSecond: 10  // 限制实时更新频率
-                            }
                         }
                     }
                 );
@@ -56,7 +50,7 @@ class DatabaseOptimized {
         }
     }
 
-    // 测试连接
+    // 测试连接（匿名访问测试）
     async testConnection() {
         const timeout = new Promise((_, reject) =>
             setTimeout(() => reject(new Error('连接超时')), this.connectionTimeout)
@@ -67,7 +61,27 @@ class DatabaseOptimized {
             .select('id')
             .limit(1);
 
-        await Promise.race([check, timeout]);
+        const result = await Promise.race([check, timeout]);
+
+        // 测试连接成功后，设置用户角色上下文（如果已登录）
+        if (window.auth && window.auth.currentUser) {
+            await this.setRoleContext(window.auth.currentUser.role);
+        }
+
+        return result;
+    }
+
+    // 设置角色上下文（用于RLS策略）
+    async setRoleContext(role) {
+        try {
+            // 通过自定义请求头传递角色信息
+            this.supabase.rest.headers = {
+                ...this.supabase.rest.headers,
+                'x-user-role': role
+            };
+        } catch (error) {
+            console.warn('设置角色上下文失败:', error);
+        }
     }
 
     // 延迟函数
@@ -92,26 +106,10 @@ class DatabaseOptimized {
         }
     }
 
-    // 登录（带重试）
-    async login(email, password) {
-        return this.retryOperation(async () => {
-            const { data, error } = await this.supabase.auth.signInWithPassword({
-                email,
-                password
-            });
+    // 删除登录相关方法
+    // 登录由 auth.js 统一管理
 
-            if (error) {
-                console.error('登录失败:', error);
-                throw error;
-            }
-
-            this.currentUser = data.user;
-            console.log('登录成功:', this.currentUser.email);
-            return data;
-        }, '登录');
-    }
-
-    // 获取所有患者（带缓存）
+    // 获取所有患者（带缓存，所有人可见）
     async getAllPatients() {
         // 先尝试从缓存读取
         const cached = this.getCachedPatients();
@@ -120,11 +118,11 @@ class DatabaseOptimized {
             return cached.data;
         }
 
-        // 从数据库获取
+        // 从数据库获取（所有患者，不区分创建者）
         return this.retryOperation(async () => {
             const { data, error } = await this.supabase
                 .from('patients')
-                .select('id, study_id, name, enroll_date, surgery_date')
+                .select('id, patient_id, name, age, gender, surgery_date, surgery_type, baseline_completed, pod1_completed, pod3_completed, pod7_completed, pod14_completed, pod30_completed')
                 .order('created_at', { ascending: false });
 
             if (error) {
@@ -182,28 +180,22 @@ class DatabaseOptimized {
         }, '获取患者详情');
     }
 
-    // 创建患者（带重试）
+    // 创建患者（带重试，管理员权限）
     async createPatient(patientData) {
         return this.retryOperation(async () => {
             const { data, error } = await this.supabase
                 .from('patients')
                 .insert([{
-                    user_id: this.currentUser.id,
-                    study_id: patientData.studyId,
+                    patient_id: patientData.patient_id,
                     name: patientData.name || '',
-                    medical_record_no: patientData.medicalRecordNo || '',
-                    ward: patientData.ward || '',
-                    bed_no: patientData.bedNo || '',
-                    phone: patientData.phone || '',
-                    enroll_date: patientData.enrollDate,
-                    surgery_date: patientData.surgeryDate || null,
-                    has_l3_ct: patientData.hasL3Ct || null,
-                    sleep_intervention_triggered: patientData.sleepInterventionTriggered || null,
                     age: patientData.age || null,
                     gender: patientData.gender || null,
+                    surgery_date: patientData.surgery_date,
+                    surgery_type: patientData.surgery_type || null,
+                    asa_class: patientData.asa_class || null,
                     education_years: patientData.education_years || null,
-                    occupation: patientData.occupation || null,
-                    bmi: patientData.bmi || null
+                    phone: patientData.phone || '',
+                    created_by: window.auth ? window.auth.currentUser.username : null
                 }])
                 .select()
                 .single();
@@ -267,12 +259,14 @@ class DatabaseOptimized {
     async savePatientData(patientId, phase, formData, isCompleted) {
         return this.retryOperation(async () => {
             const { data, error } = await this.supabase
-                .from('patient_data')
+                .from('assessments')
                 .upsert({
                     patient_id: patientId,
                     phase: phase,
                     data: formData,
-                    is_completed: isCompleted
+                    completed: isCompleted,
+                    completed_at: isCompleted ? new Date().toISOString() : null,
+                    created_by: window.auth ? window.auth.currentUser.username : null
                 }, {
                     onConflict: 'patient_id,phase'
                 })
@@ -291,7 +285,7 @@ class DatabaseOptimized {
     async getPatientData(patientId, phase) {
         return this.retryOperation(async () => {
             const { data, error } = await this.supabase
-                .from('patient_data')
+                .from('assessments')
                 .select('*')
                 .eq('patient_id', patientId)
                 .eq('phase', phase)
@@ -309,7 +303,7 @@ class DatabaseOptimized {
     async getAllPatientData(patientId) {
         return this.retryOperation(async () => {
             const { data, error } = await this.supabase
-                .from('patient_data')
+                .from('assessments')
                 .select('*')
                 .eq('patient_id', patientId);
 
