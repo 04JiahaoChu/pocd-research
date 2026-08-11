@@ -97,7 +97,12 @@ class Database {
                 enroll_date: patientData.enrollDate,
                 surgery_date: patientData.surgeryDate || null,
                 has_l3_ct: patientData.hasL3Ct || null,
-                sleep_intervention_triggered: patientData.sleepInterventionTriggered || null
+                sleep_intervention_triggered: patientData.sleepInterventionTriggered || null,
+                age: patientData.age || null,
+                gender: patientData.gender || null,
+                education_years: patientData.education_years || null,
+                occupation: patientData.occupation || null,
+                bmi: patientData.bmi || null
             }])
             .select()
             .single();
