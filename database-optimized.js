@@ -245,16 +245,24 @@ class DatabaseOptimized {
     // 删除患者（带重试）
     async deletePatient(id) {
         return this.retryOperation(async () => {
-            const { error } = await this.supabase
+            const { data, error, count } = await this.supabase
                 .from('patients')
                 .delete()
-                .eq('id', id);
+                .eq('id', id)
+                .select();
 
             if (error) {
                 console.error('删除患者失败:', error);
                 throw error;
             }
 
+            // 检查是否真的删除了数据
+            if (!data || data.length === 0) {
+                console.error('删除失败：没有找到匹配的患者，或者没有删除权限');
+                throw new Error('删除失败：可能是权限不足或患者不存在');
+            }
+
+            console.log('删除成功，已删除患者:', data);
             this.clearCache();
             return true;
         }, '删除患者');
