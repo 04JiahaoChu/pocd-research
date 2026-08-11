@@ -195,19 +195,42 @@
         const loading = document.getElementById('loading');
         const errorMessage = document.getElementById('error-message');
 
+        let dbInitialized = false;
+
         // 初始化数据库
         (async () => {
             try {
-                await db.initialize();
+                // 先禁用登录按钮
+                loginBtn.disabled = true;
+                loginBtn.textContent = '初始化中...';
+
+                // 确保 db 对象存在
+                if (!window.db) {
+                    throw new Error('数据库模块未加载');
+                }
+
+                await window.db.initialize();
                 console.log('数据库初始化成功');
+
+                dbInitialized = true;
+                loginBtn.disabled = false;
+                loginBtn.textContent = '登录';
+
             } catch (error) {
-                showError('数据库连接失败，请检查网络');
+                console.error('数据库初始化失败:', error);
+                showError('数据库连接失败，请检查网络后刷新页面');
+                loginBtn.disabled = true;
             }
         })();
 
         // 登录表单提交
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+
+            if (!dbInitialized) {
+                showError('数据库未初始化，请刷新页面重试');
+                return;
+            }
 
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
@@ -219,6 +242,7 @@
 
             // 显示加载状态
             loginBtn.disabled = true;
+            loginBtn.textContent = '登录中...';
             loading.classList.add('show');
             errorMessage.classList.remove('show');
 
@@ -232,6 +256,7 @@
                 console.error('登录失败:', error);
                 showError(error.message || '登录失败，请检查账号密码');
                 loginBtn.disabled = false;
+                loginBtn.textContent = '登录';
                 loading.classList.remove('show');
             }
         });
