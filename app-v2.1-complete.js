@@ -579,8 +579,14 @@ const app = {
             const element = document.getElementById(field.name);
             if (element) {
                 // 空字符串转为 null，避免数据库报错
-                const value = element.value;
-                formData[field.name] = value === '' ? null : value;
+                let value = element.value;
+                // 数字类型的空值转为 null
+                if (element.type === 'number' && value === '') {
+                    value = null;
+                } else if (value === '') {
+                    value = null;
+                }
+                formData[field.name] = value;
             }
         });
 
