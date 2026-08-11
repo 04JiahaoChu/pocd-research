@@ -122,6 +122,7 @@ class Database {
 
         if (error) {
             console.error('更新患者失败:', error);
+            alert('数据库错误：' + error.message + '\n错误代码：' + error.code);
             return null;
         }
         return data;

@@ -560,6 +560,8 @@ const app = {
                 this.currentPatient = updated;
                 alert('基本信息保存成功！');
                 await this.render();
+            } else {
+                alert('保存失败！请打开F12控制台查看错误信息');
             }
         } else {
             // 保存数据采集节点
