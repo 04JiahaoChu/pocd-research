@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>POCD研究数据采集 - 新版</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-weight: 300;
+            background: #F7F4EF;
+            color: #1F2421;
+            padding-bottom: 80px;
+        }
+
+        .header {
+            background: rgba(251, 249, 245, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid #E7E1D7;
+            padding: 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 22px;
+            font-weight: 400;
+            letter-spacing: -0.02em;
+            margin-bottom: 4px;
+            color: #1F2421;
+        }
+
+        .header h1 em {
+            font-style: italic;
+            color: #C4612F;
+        }
+
+        .header p {
+            font-size: 13px;
+            color: #5C635D;
+            font-weight: 400;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+
+        .card {
+            background: #FFFFFF;
+            border-radius: 12px;
+            border: 1px solid #E7E1D7;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(31, 36, 33, 0.04);
+        }
+
+        .card h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 18px;
+            font-weight: 400;
+            color: #1F2421;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #E7E1D7;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1F2421;
+            margin-bottom: 8px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #E7E1D7;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            background: #FFFFFF;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #C4612F;
+            box-shadow: 0 0 0 3px rgba(196, 97, 47, 0.1);
+        }
+
+        .form-hint {
+            font-size: 12px;
+            color: #5C635D;
+            margin-top: 6px;
+        }
+
+        .required {
+            color: #C4612F;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 999px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: #C4612F;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #A94E22;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #FBF9F5;
+            color: #C4612F;
+            border: 1px solid #E7E1D7;
+        }
+
+        .btn-secondary:hover {
+            background: #F2E3D6;
+        }
+
+        .btn:active {
+            transform: scale(0.96);
+        }
+
+        .bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(251, 249, 245, 0.95);
+            backdrop-filter: blur(12px);
+            padding: 12px 16px;
+            border-top: 1px solid #E7E1D7;
+            display: flex;
+            gap: 12px;
+        }
+
+        .bottom-bar .btn {
+            flex: 1;
+        }
+
+        .patient-item {
+            padding: 16px;
+            border: 1px solid #E7E1D7;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            background: #FBF9F5;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .patient-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(31, 36, 33, 0.08);
+        }
+
+        .patient-item h3 {
+            font-size: 16px;
+            font-weight: 500;
+            color: #1F2421;
+            margin-bottom: 8px;
+        }
+
+        .patient-item p {
+            font-size: 13px;
+            color: #5C635D;
+        }
+
+        .phase-nav {
+            display: flex;
+            overflow-x: auto;
+            gap: 8px;
+            padding: 12px 16px;
+            background: rgba(251, 249, 245, 0.95);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid #E7E1D7;
+            position: sticky;
+            top: 90px;
+            z-index: 99;
+        }
+
+        .phase-btn {
+            padding: 8px 16px;
+            border: 1px solid #E7E1D7;
+            border-radius: 999px;
+            background: #FFFFFF;
+            color: #5C635D;
+            font-size: 13px;
+            font-weight: 500;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .phase-btn.active {
+            background: #C4612F;
+            color: white;
+            border-color: #C4612F;
+        }
+
+        .fab {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #C4612F;
+            color: white;
+            border: none;
+            font-size: 28px;
+            box-shadow: 0 4px 16px rgba(196, 97, 47, 0.3);
+            cursor: pointer;
+            z-index: 99;
+        }
+
+        .fab:hover {
+            background: #A94E22;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>POCD研究 <em>数据采集</em></h1>
+        <p>Hangzhou Medical College</p>
+        <div style="margin-top: 12px;">
+            <span style="font-size: 13px; color: #5C635D;">
+                <span style="font-weight: 500; color: #C4612F;" id="user-name">-</span>
+            </span>
+            <a href="profile.html" style="color: #C4612F; text-decoration: none; font-size: 13px; font-weight: 500; float: right;">个人中心 →</a>
+        </div>
+    </div>
+
+    <div id="app"></div>
+
+    <button class="fab" onclick="app.showNewPatient()" id="fab-btn">+</button>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="config.js"></script>
+    <script>
+        // === 数据库连接 ===
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // === 数据库操作 ===
+        const DB = {
+            async getAllPatients() {
+                const { data, error } = await supabaseClient
+                    .from('patients')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    console.error('获取患者列表失败:', error);
+                    return [];
+                }
+                return data || [];
+            },
+
+            async getPatient(id) {
+                const { data, error } = await supabaseClient
+                    .from('patients')
+                    .select('*')
+                    .eq('id', id)
+                    .single();
+
+                if (error) {
+                    console.error('获取患者失败:', error);
+                    return null;
+                }
+                return data;
+            },
+
+            async createPatient(patientData) {
+                // 清理空值
+                const cleanData = {};
+                for (const [key, value] of Object.entries(patientData)) {
+                    cleanData[key] = (value === '' || value === undefined) ? null : value;
+                }
+
+                const { data, error } = await supabaseClient
+                    .from('patients')
+                    .insert([cleanData])
+                    .select()
+                    .single();
+
+                if (error) {
+                    console.error('创建患者失败:', error);
+                    alert('创建失败：' + error.message);
+                    throw error;
+                }
+                return data;
+            },
+
+            async updatePatient(id, updates) {
+                // 清理空值：空字符串和undefined转为null
+                const cleanUpdates = {};
+                for (const [key, value] of Object.entries(updates)) {
+                    cleanUpdates[key] = (value === '' || value === undefined) ? null : value;
+                }
+
+                cleanUpdates.updated_at = new Date().toISOString();
+
+                const { data, error } = await supabaseClient
+                    .from('patients')
+                    .update(cleanUpdates)
+                    .eq('id', id)
+                    .select()
+                    .single();
+
+                if (error) {
+                    console.error('更新失败:', error);
+                    alert('保存失败：' + error.message);
+                    throw error;
+                }
+                return data;
+            },
+
+            async deletePatient(id) {
+                const { error } = await supabaseClient
+                    .from('patients')
+                    .delete()
+                    .eq('id', id);
+
+                if (error) {
+                    console.error('删除失败:', error);
+                    throw error;
+                }
+                return true;
+            }
+        };
+
+        // === 应用逻辑 ===
+        const app = {
+            currentView: 'list',
+            currentPatient: null,
+            currentPhase: 'basic_info',
+
+            async init() {
+                // 检查登录
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (!session) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                // 显示用户名
+                document.getElementById('user-name').textContent = session.user.email;
+
+                await this.render();
+            },
+
+            async render() {
+                const container = document.getElementById('app');
+
+                if (this.currentView === 'list') {
+                    await this.renderPatientList(container);
+                } else if (this.currentView === 'new') {
+                    this.renderNewPatient(container);
+                } else if (this.currentView === 'detail') {
+                    await this.renderPatientDetail(container);
+                }
+            },
+
+            async renderPatientList(container) {
+                const patients = await DB.getAllPatients();
+
+                container.innerHTML = `
+                    <div class="container">
+                        <div class="card">
+                            <h2>👥 患者列表</h2>
+                            <p style="font-size: 13px; color: #5C635D;">共 ${patients.length} 位患者</p>
+                        </div>
+
+                        ${patients.length > 0 ? patients.map(p => `
+                            <div class="patient-item" onclick="app.goToPatient('${p.id}')">
+                                <h3>${p.study_id}</h3>
+                                <p>姓名：${p.name || '未填写'} | 年龄：${p.age || '?'} | 性别：${p.gender || '?'}</p>
+                                <p style="font-size: 12px; margin-top: 4px;">
+                                    入组：${p.enrollment_date || '未填写'} | 手术：${p.surgery_date || '未填写'}
+                                </p>
+                            </div>
+                        `).join('') : '<div class="container"><p style="text-align: center; color: #5C635D;">暂无患者，点击右下角+号新建</p></div>'}
+                    </div>
+                `;
+            },
+
+            renderNewPatient(container) {
+                container.innerHTML = `
+                    <div class="container">
+                        <div class="card">
+                            <h2>➕ 新建患者</h2>
+
+                            <div class="form-group">
+                                <label>研究编号<span class="required">*</span></label>
+                                <input type="text" id="study_id" placeholder="如 POCD-001">
+                            </div>
+
+                            <div class="form-group">
+                                <label>患者姓名</label>
+                                <input type="text" id="name" placeholder="床旁核对用">
+                            </div>
+
+                            <div class="form-group">
+                                <label>入组日期<span class="required">*</span></label>
+                                <input type="date" id="enrollment_date">
+                            </div>
+
+                            <div class="form-group">
+                                <label>手术日期<span class="required">*</span></label>
+                                <input type="date" id="surgery_date">
+                            </div>
+
+                            <div class="form-group">
+                                <label>年龄<span class="required">*</span></label>
+                                <input type="number" id="age" min="18" max="120" placeholder="岁">
+                            </div>
+
+                            <div class="form-group">
+                                <label>性别<span class="required">*</span></label>
+                                <select id="gender">
+                                    <option value="">请选择</option>
+                                    <option value="男">男</option>
+                                    <option value="女">女</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>受教育年限<span class="required">*</span></label>
+                                <input type="number" id="education_years" min="0" max="30" placeholder="年">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bottom-bar">
+                        <button class="btn btn-secondary" onclick="app.backToList()">取消</button>
+                        <button class="btn btn-primary" onclick="app.createPatient()">创建</button>
+                    </div>
+                `;
+            },
+
+            async renderPatientDetail(container) {
+                const patient = await DB.getPatient(this.currentPatient);
+                if (!patient) {
+                    alert('患者不存在');
+                    this.backToList();
+                    return;
+                }
+
+                const phases = [
+                    { id: 'basic_info', name: '📋 基本信息' },
+                    { id: 'T0', name: '🔬 T0术前' },
+                    { id: 'POD1', name: '🏥 POD1' },
+                    { id: 'POD3', name: '📊 POD3' },
+                    { id: 'POD7', name: '📈 POD7' },
+                    { id: 'POD14', name: '📞 POD14' },
+                    { id: 'POD30', name: '✅ POD30' },
+                    { id: 'intraop', name: '⚕️ 术中' }
+                ];
+
+                const phaseNav = phases.map(p => `
+                    <button class="phase-btn ${p.id === this.currentPhase ? 'active' : ''}"
+                            onclick="app.switchPhase('${p.id}')">
+                        ${p.name}
+                    </button>
+                `).join('');
+
+                container.innerHTML = `
+                    <div class="phase-nav">${phaseNav}</div>
+                    <div class="container">
+                        <div class="card">
+                            <h2>${phases.find(p => p.id === this.currentPhase).name}</h2>
+                            <p style="font-size: 13px; color: #5C635D; margin-bottom: 16px;">
+                                ${patient.study_id} | ${patient.name || '未命名'} | ${patient.age || '?'}岁 | ${patient.gender || '?'}
+                            </p>
+                            <div id="fields-container"></div>
+                        </div>
+                    </div>
+
+                    <div class="bottom-bar">
+                        <button class="btn btn-secondary" onclick="app.backToList()">返回</button>
+                        <button class="btn btn-primary" onclick="app.saveData()">保存</button>
+                    </div>
+                `;
+
+                // 渲染字段（简化版，先只做基本信息）
+                this.renderFields(patient);
+            },
+
+            renderFields(patient) {
+                const fieldsContainer = document.getElementById('fields-container');
+                if (!fieldsContainer) return;
+
+                if (this.currentPhase === 'basic_info') {
+                    fieldsContainer.innerHTML = `
+                        <div class="form-group">
+                            <label>研究编号</label>
+                            <input type="text" id="study_id" value="${patient.study_id || ''}" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>患者姓名</label>
+                            <input type="text" id="name" value="${patient.name || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>年龄</label>
+                            <input type="number" id="age" value="${patient.age || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>性别</label>
+                            <select id="gender">
+                                <option value="">请选择</option>
+                                <option value="男" ${patient.gender === '男' ? 'selected' : ''}>男</option>
+                                <option value="女" ${patient.gender === '女' ? 'selected' : ''}>女</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>受教育年限</label>
+                            <input type="number" id="education_years" value="${patient.education_years || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>职业</label>
+                            <input type="text" id="occupation" value="${patient.occupation || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>入组日期</label>
+                            <input type="date" id="enrollment_date" value="${patient.enrollment_date || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>手术日期</label>
+                            <input type="date" id="surgery_date" value="${patient.surgery_date || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>手术类型</label>
+                            <input type="text" id="surgery_type" value="${patient.surgery_type || ''}">
+                        </div>
+                        <div class="form-group">
+                            <label>BMI</label>
+                            <input type="number" step="0.1" id="bmi" value="${patient.bmi || ''}">
+                        </div>
+                    `;
+                } else {
+                    fieldsContainer.innerHTML = `<p style="color: #5C635D;">其他阶段字段待开发...</p>`;
+                }
+            },
+
+            showNewPatient() {
+                this.currentView = 'new';
+                document.getElementById('fab-btn').style.display = 'none';
+                this.render();
+            },
+
+            backToList() {
+                this.currentView = 'list';
+                this.currentPatient = null;
+                document.getElementById('fab-btn').style.display = 'block';
+                this.render();
+            },
+
+            async createPatient() {
+                const study_id = document.getElementById('study_id').value.trim();
+                const name = document.getElementById('name').value.trim();
+                const enrollment_date = document.getElementById('enrollment_date').value;
+                const surgery_date = document.getElementById('surgery_date').value;
+                const age = document.getElementById('age').value;
+                const gender = document.getElementById('gender').value;
+                const education_years = document.getElementById('education_years').value;
+
+                if (!study_id || !enrollment_date || !surgery_date || !age || !gender || !education_years) {
+                    alert('请填写所有必填项');
+                    return;
+                }
+
+                try {
+                    const patient = await DB.createPatient({
+                        study_id,
+                        name: name || null,
+                        enrollment_date,
+                        surgery_date,
+                        age: parseInt(age),
+                        gender,
+                        education_years: parseInt(education_years)
+                    });
+
+                    alert('创建成功！');
+                    this.goToPatient(patient.id);
+                } catch (error) {
+                    console.error('创建失败:', error);
+                }
+            },
+
+            async goToPatient(id) {
+                this.currentView = 'detail';
+                this.currentPatient = id;
+                this.currentPhase = 'basic_info';
+                document.getElementById('fab-btn').style.display = 'none';
+                await this.render();
+            },
+
+            switchPhase(phase) {
+                this.currentPhase = phase;
+                this.render();
+            },
+
+            async saveData() {
+                const updates = {};
+
+                // 只收集当前页面上的字段
+                const inputs = document.querySelectorAll('#fields-container input, #fields-container select');
+                inputs.forEach(input => {
+                    const value = input.value;
+                    updates[input.id] = (value === '' || value === undefined) ? null : value;
+                });
+
+                console.log('准备保存:', updates);
+
+                try {
+                    await DB.updatePatient(this.currentPatient, updates);
+                    alert('保存成功！');
+                    await this.render();
+                } catch (error) {
+                    console.error('保存失败:', error);
+                }
+            }
+        };
+
+        // 初始化
+        app.init();
+    </script>
+</body>
+</html>
