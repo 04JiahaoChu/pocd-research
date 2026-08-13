@@ -335,8 +335,9 @@ const app = {
         if (this.currentPhase === 'basic_info') {
             data = this.currentPatient;
         } else {
+            // getPatientData 返回宽表患者对象，直接用（不是 {data:...} 结构）
             const phaseData = await db.getPatientData(this.currentPatient.id, this.currentPhase);
-            data = phaseData?.data || {};
+            data = phaseData || {};
         }
 
         const html = fields.map(field => {
@@ -424,35 +425,35 @@ const app = {
     },
 
     autoCalculateScores() {
-        // MMSE自动计算 (5+5+3+5+3+2+1+3+1 = 28)
+        // T0 MMSE自动计算（字段名带 t0_ 前缀，对齐 fields-complete-v3.js）
         const mmseFields = [
-            'mmse_time_orientation',
-            'mmse_place_orientation',
-            'mmse_immediate_recall',
-            'mmse_attention',
-            'mmse_delayed_recall',
-            'mmse_naming',
-            'mmse_repetition',
-            'mmse_comprehension',
-            'mmse_reading',
-            'mmse_writing',
-            'mmse_drawing'
+            't0_mmse_time_orientation',
+            't0_mmse_place_orientation',
+            't0_mmse_immediate_memory',
+            't0_mmse_attention_calculation',
+            't0_mmse_delayed_recall',
+            't0_mmse_naming',
+            't0_mmse_repetition',
+            't0_mmse_comprehension',
+            't0_mmse_reading',
+            't0_mmse_writing',
+            't0_mmse_structure'
         ];
         const mmseTotal = this.calculateSum(mmseFields);
-        const mmseTotalElement = document.getElementById('mmse_total');
+        const mmseTotalElement = document.getElementById('t0_mmse_total');
         if (mmseTotalElement) {
             mmseTotalElement.value = mmseTotal;
         }
 
-        // MoCA自动计算 (5+3+6+3+2+5+6 = 30)
+        // T0 MoCA自动计算（字段名带 t0_ 前缀）
         const mocaFields = [
-            'moca_visuospatial',
-            'moca_naming',
-            'moca_attention',
-            'moca_language',
-            'moca_abstraction',
-            'moca_delayed_recall',
-            'moca_orientation'
+            't0_moca_visuospatial',
+            't0_moca_naming',
+            't0_moca_attention',
+            't0_moca_language',
+            't0_moca_abstraction',
+            't0_moca_delayed_recall',
+            't0_moca_orientation'
         ];
         let mocaTotal = this.calculateSum(mocaFields);
 
@@ -462,23 +463,23 @@ const app = {
             mocaTotal = Math.min(mocaTotal + 1, 30);
         }
 
-        const mocaTotalElement = document.getElementById('moca_total');
+        const mocaTotalElement = document.getElementById('t0_moca_total');
         if (mocaTotalElement) {
             mocaTotalElement.value = mocaTotal;
         }
 
-        // PSQI自动计算 (7个分项)
+        // T0 PSQI自动计算（字段名带 t0_psqi_ 前缀）
         const psqiFields = [
-            'psqi_quality',
-            'psqi_latency',
-            'psqi_duration',
-            'psqi_efficiency',
-            'psqi_disturbance',
-            'psqi_medication',
-            'psqi_dysfunction'
+            't0_psqi_subjective_quality',
+            't0_psqi_sleep_latency',
+            't0_psqi_sleep_duration',
+            't0_psqi_sleep_efficiency',
+            't0_psqi_sleep_disturbance',
+            't0_psqi_sleep_medication',
+            't0_psqi_daytime_dysfunction'
         ];
         const psqiTotal = this.calculateSum(psqiFields);
-        const psqiTotalElement = document.getElementById('psqi_total');
+        const psqiTotalElement = document.getElementById('t0_psqi_total');
         if (psqiTotalElement) {
             psqiTotalElement.value = psqiTotal;
         }
@@ -604,18 +605,23 @@ const app = {
             // 保存数据采集节点
             const completed = confirm('标记本阶段为已完成？');
 
-            const saved = await db.savePatientData(
-                this.currentPatient.id,
-                this.currentPhase,
-                formData,
-                completed
-            );
+            try {
+                const saved = await db.savePatientData(
+                    this.currentPatient.id,
+                    this.currentPhase,
+                    formData,
+                    completed
+                );
 
-            if (saved) {
-                alert('保存成功！');
-                await this.render();
-            } else {
-                alert('保存失败，请检查网络连接');
+                if (saved) {
+                    alert('保存成功！');
+                    await this.render();
+                } else {
+                    alert('保存失败，请检查网络连接');
+                }
+            } catch (error) {
+                console.error('保存数据失败:', error);
+                alert('保存失败：' + (error.message || '未知错误') + '\n\n请打开F12控制台查看详细错误信息');
             }
         }
     },

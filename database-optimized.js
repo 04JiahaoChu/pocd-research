@@ -1,7 +1,29 @@
 // 数据库连接优化配置
 // 适配完整116字段数据库结构
-// 版本：3.0
-// 日期：2026-08-12
+// 版本：3.1
+// 日期：2026-08-14
+
+// ── Boolean字段映射 ────────────────────────────────────────────────────────
+// 数据库列为 BOOLEAN 类型，前端用"是/否"或"有/无"表示
+// 写入前需要转换为 true/false，读出后需要还原为中文
+const BOOLEAN_FIELDS = {
+    // "是"=true / "否"=false
+    yesNo: new Set([
+        'sleep_correction_triggered',
+        'has_standard_l3_ct',
+        'pod1_sleep_correction_triggered',
+        'pod1_pca_use'
+    ]),
+    // "有"=true / "无"=false
+    haveNot: new Set([
+        'hypertension',
+        'diabetes',
+        'coronary_heart_disease',
+        'cerebrovascular_disease',
+        'benzodiazepine_history',
+        'statin_history'
+    ])
+};
 
 class DatabaseOptimized {
     constructor() {
@@ -89,6 +111,42 @@ class DatabaseOptimized {
         return new Promise(resolve => setTimeout(resolve, ms));
     }
 
+    // ── Boolean 类型转换 ────────────────────────────────────────────────────
+
+    // 写入DB前：把中文"是/否/有/无"转为 true/false
+    convertForDatabase(data) {
+        if (!data || typeof data !== 'object') return data;
+        const result = { ...data };
+        for (const [key, value] of Object.entries(result)) {
+            if (BOOLEAN_FIELDS.yesNo.has(key)) {
+                if (value === '是') result[key] = true;
+                else if (value === '否') result[key] = false;
+                else if (value === '' || value === undefined) result[key] = null;
+            } else if (BOOLEAN_FIELDS.haveNot.has(key)) {
+                if (value === '有') result[key] = true;
+                else if (value === '无') result[key] = false;
+                else if (value === '' || value === undefined) result[key] = null;
+            }
+        }
+        return result;
+    }
+
+    // 读出DB后：把 true/false 还原为中文，方便表单下拉回显
+    convertFromDatabase(data) {
+        if (!data || typeof data !== 'object') return data;
+        const result = { ...data };
+        for (const [key, value] of Object.entries(result)) {
+            if (BOOLEAN_FIELDS.yesNo.has(key)) {
+                if (value === true) result[key] = '是';
+                else if (value === false) result[key] = '否';
+            } else if (BOOLEAN_FIELDS.haveNot.has(key)) {
+                if (value === true) result[key] = '有';
+                else if (value === false) result[key] = '无';
+            }
+        }
+        return result;
+    }
+
     // 带重试的通用数据库操作
     async retryOperation(operation, operationName) {
         for (let i = 0; i < this.retryCount; i++) {
@@ -170,7 +228,7 @@ class DatabaseOptimized {
                 throw error;
             }
 
-            return data;
+            return this.convertFromDatabase(data);
         }, '获取患者详情');
     }
 
@@ -217,9 +275,10 @@ class DatabaseOptimized {
     // 更新患者（带重试）
     async updatePatient(id, updates) {
         return this.retryOperation(async () => {
-            // 清理空值：空字符串转为 null
+            // 先把中文"是/否/有/无"转为 boolean，再清理空值
+            const converted = this.convertForDatabase({ ...updates });
             const cleanUpdates = {};
-            for (const [key, value] of Object.entries(updates)) {
+            for (const [key, value] of Object.entries(converted)) {
                 if (value === '' || value === undefined) {
                     cleanUpdates[key] = null;
                 } else {
@@ -244,7 +303,7 @@ class DatabaseOptimized {
             }
 
             this.clearCache();
-            return data;
+            return this.convertFromDatabase(data);
         }, '更新患者');
     }
 
@@ -268,8 +327,6 @@ class DatabaseOptimized {
 
     // 获取患者所有阶段数据（新增方法）
     async getAllPatientData(patientId) {
-        // 因为使用的是宽表结构，所有数据都在 patients 表中
-        // 这个方法返回完整的患者记录
         return this.retryOperation(async () => {
             const { data, error } = await this.supabase
                 .from('patients')
@@ -282,7 +339,7 @@ class DatabaseOptimized {
                 throw error;
             }
 
-            return data;
+            return this.convertFromDatabase(data);
         }, '获取患者所有数据');
     }
 
@@ -290,9 +347,10 @@ class DatabaseOptimized {
     async savePatientData(patientId, phase, formData, isCompleted) {
         // 宽表结构：直接更新 patients 表的相应字段
         return this.retryOperation(async () => {
-            // 清理空值：空字符串转为 null
+            // 先把中文"是/否/有/无"转为 boolean，再清理空值
+            const converted = this.convertForDatabase({ ...formData });
             const cleanFormData = {};
-            for (const [key, value] of Object.entries(formData)) {
+            for (const [key, value] of Object.entries(converted)) {
                 if (value === '' || value === undefined) {
                     cleanFormData[key] = null;
                 } else {
@@ -313,7 +371,7 @@ class DatabaseOptimized {
             }
 
             this.clearCache();
-            return data;
+            return this.convertFromDatabase(data);
         }, '保存患者数据');
     }
 
