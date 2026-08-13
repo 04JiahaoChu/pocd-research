@@ -217,12 +217,22 @@ class DatabaseOptimized {
     // 更新患者（带重试）
     async updatePatient(id, updates) {
         return this.retryOperation(async () => {
+            // 清理空值：空字符串转为 null
+            const cleanUpdates = {};
+            for (const [key, value] of Object.entries(updates)) {
+                if (value === '' || value === undefined) {
+                    cleanUpdates[key] = null;
+                } else {
+                    cleanUpdates[key] = value;
+                }
+            }
+
             // 添加更新时间
-            updates.updated_at = new Date().toISOString();
+            cleanUpdates.updated_at = new Date().toISOString();
 
             const { data, error } = await this.supabase
                 .from('patients')
-                .update(updates)
+                .update(cleanUpdates)
                 .eq('id', id)
                 .select()
                 .single();
@@ -280,9 +290,19 @@ class DatabaseOptimized {
     async savePatientData(patientId, phase, formData, isCompleted) {
         // 宽表结构：直接更新 patients 表的相应字段
         return this.retryOperation(async () => {
+            // 清理空值：空字符串转为 null
+            const cleanFormData = {};
+            for (const [key, value] of Object.entries(formData)) {
+                if (value === '' || value === undefined) {
+                    cleanFormData[key] = null;
+                } else {
+                    cleanFormData[key] = value;
+                }
+            }
+
             const { data, error } = await this.supabase
                 .from('patients')
-                .update(formData)
+                .update(cleanFormData)
                 .eq('id', patientId)
                 .select()
                 .single();
