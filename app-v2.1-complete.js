@@ -591,15 +591,29 @@ const app = {
             }
         });
 
+        console.log('=== 保存阶段调试 ===');
+        console.log('当前阶段:', this.currentPhase);
+        console.log('字段定义数量:', fields.length);
+        console.log('收集到的表单数据:', formData);
+        console.log('患者ID:', this.currentPatient.id);
+
         if (this.currentPhase === 'basic_info') {
             // 更新患者基础信息 - 直接传整个 formData
-            const updated = await db.updatePatient(this.currentPatient.id, formData);
-            if (updated) {
-                this.currentPatient = updated;
-                alert('基本信息保存成功！');
-                await this.render();
-            } else {
-                alert('保存失败！请打开F12控制台查看错误信息');
+            try {
+                console.log('准备调用 db.updatePatient...');
+                const updated = await db.updatePatient(this.currentPatient.id, formData);
+                console.log('db.updatePatient 返回结果:', updated);
+
+                if (updated) {
+                    this.currentPatient = updated;
+                    alert('基本信息保存成功！');
+                    await this.render();
+                } else {
+                    alert('保存失败！请打开F12控制台查看错误信息');
+                }
+            } catch (error) {
+                console.error('保存基本信息出错:', error);
+                alert('保存失败：' + error.message);
             }
         } else {
             // 保存数据采集节点
