@@ -196,8 +196,8 @@ class DatabaseOptimized {
         return this.retryOperation(async () => {
             const { data, error } = await this.supabase
                 .from('patients')
-                .select('id, study_id, name, enrollment_date, surgery_date, ward, bed_no, ' +
-                       't0_mmse_total, pod1_cam_delirium, pod3_mmse, pod7_mmse')
+                .select('id, patient_id, name, age, gender, surgery_date, surgery_type, ' +
+                       'baseline_completed, pod1_completed, pod3_completed, pod7_completed')
                 .is('deleted_at', null)  // 过滤已删除的患者
                 .order('created_at', { ascending: false });
 
