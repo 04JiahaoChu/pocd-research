@@ -176,7 +176,7 @@ class DatabaseOptimized {
         return this.retryOperation(async () => {
             const { data, error } = await this.supabase
                 .from('patients')
-                .select('id, study_id, name, age, gender, surgery_date, surgery_type, enrollment_date, created_at')
+                .select('id, patient_id, name, age, gender, surgery_date, surgery_type, created_at')
                 .is('deleted_at', null)  // 过滤已删除的患者
                 .order('created_at', { ascending: false });
 
@@ -265,17 +265,14 @@ class DatabaseOptimized {
             }
 
             const insertData = {
-                user_id: userId,
-                study_id: patientData.study_id,
+                patient_id: patientData.patient_id,
                 name: patientData.name || '',
                 age: patientData.age || null,
                 gender: patientData.gender || null,
-                enrollment_date: patientData.enrollment_date || new Date().toISOString().split('T')[0],
                 surgery_date: patientData.surgery_date || null,
-                // 以下字段之前被遗漏
-                medical_record_no: patientData.medical_record_no || null,
-                ward: patientData.ward || null,
-                bed_no: patientData.bed_no || null,
+                surgery_type: patientData.surgery_type || null,
+                asa_class: patientData.asa_class || null,
+                education_years: patientData.education_years || null,
                 phone: patientData.phone || null
             };
 
