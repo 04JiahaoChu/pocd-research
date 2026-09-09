@@ -15,20 +15,27 @@ const app = {
     formData: {},
 
     async init() {
-        this.showLoading();
+        try {
+            this.showLoading();
 
-        // 初始化数据库
-        const success = await db.initialize();
-        if (!success) {
+            // 初始化数据库
+            const success = await db.initialize();
+            if (!success) {
+                this.hideLoading();
+                alert('数据库初始化失败，请刷新页面重试');
+                return;
+            }
+
+            // V6.0: 初始化新模块
+            this.initializeV6Modules();
+
             this.hideLoading();
-            return;
+            await this.render();
+        } catch (error) {
+            console.error('初始化失败:', error);
+            this.hideLoading();
+            alert('系统初始化失败: ' + error.message);
         }
-
-        // V6.0: 初始化新模块
-        this.initializeV6Modules();
-
-        this.hideLoading();
-        await this.render();
     },
 
     // V6.0: 初始化新模块
