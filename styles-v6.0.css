@@ -1,0 +1,528 @@
+/* POCD研究数据采集系统 V6.0 - 新增样式 */
+/* 分页、备注、验证、模态框等组件样式 */
+
+/* ========== 进度指示器 ========== */
+.progress-indicator {
+    margin: 20px 0;
+    padding: 20px;
+    background: #F7F4EF;
+    border-radius: 8px;
+}
+
+.progress-bar-container {
+    width: 100%;
+    height: 6px;
+    background: #E7E1D7;
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 16px;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #C4612F 0%, #E9A854 100%);
+    transition: width 0.3s ease;
+}
+
+.progress-dots {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 12px;
+    overflow-x: auto;
+    padding: 4px 0;
+}
+
+.progress-dot-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    min-width: 60px;
+    transition: transform 0.2s ease;
+}
+
+.progress-dot-container:hover {
+    transform: translateY(-2px);
+}
+
+.progress-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+}
+
+.progress-dot-pending {
+    background: #E7E1D7;
+    border: 2px solid #E7E1D7;
+}
+
+.progress-dot-current {
+    background: #C4612F;
+    border: 2px solid #C4612F;
+    box-shadow: 0 0 0 4px rgba(196, 97, 47, 0.2);
+}
+
+.progress-dot-completed {
+    background: #6B8E6F;
+    border: 2px solid #6B8E6F;
+}
+
+.progress-dot-label {
+    font-size: 11px;
+    color: #5C635D;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 80px;
+}
+
+.progress-text {
+    font-size: 13px;
+    color: #5C635D;
+    text-align: center;
+    margin: 0;
+}
+
+/* ========== 分页导航按钮 ========== */
+.pagination-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.pagination-buttons button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ========== 阶段导航 ========== */
+.phase-nav {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+}
+
+.phase-nav::-webkit-scrollbar {
+    height: 4px;
+}
+
+.phase-nav::-webkit-scrollbar-thumb {
+    background: #E7E1D7;
+    border-radius: 2px;
+}
+
+.phase-nav-btn {
+    padding: 8px 16px;
+    border: 1px solid #E7E1D7;
+    background: #FFFFFF;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #5C635D;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.phase-nav-btn:hover {
+    border-color: #C4612F;
+    color: #C4612F;
+}
+
+.phase-nav-active {
+    background: #C4612F;
+    color: #FFFFFF;
+    border-color: #C4612F;
+}
+
+/* ========== 备注区域 ========== */
+.notes-section {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid #E7E1D7;
+}
+
+.notes-section textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #E7E1D7;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    min-height: 100px;
+    resize: vertical;
+    transition: border-color 0.2s ease;
+}
+
+.notes-section textarea:focus {
+    outline: none;
+    border-color: #C4612F;
+}
+
+/* ========== 验证错误提示 ========== */
+.alert {
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    font-size: 14px;
+}
+
+.alert-error {
+    background: #FFE5E5;
+    border: 1px solid #FFB3B3;
+    color: #D32F2F;
+}
+
+.alert-warning {
+    background: #FFF4E5;
+    border: 1px solid #FFE0B3;
+    color: #F57C00;
+}
+
+.alert strong {
+    font-weight: 600;
+}
+
+.field-error {
+    font-size: 12px;
+    color: #D32F2F;
+    margin-top: 4px;
+}
+
+.form-field.has-error input,
+.form-field.has-error select,
+.form-field.has-error textarea {
+    border-color: #D32F2F;
+}
+
+/* ========== 模态框 ========== */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(31, 36, 33, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.modal-content {
+    background: #FFFFFF;
+    border-radius: 12px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 32px rgba(31, 36, 33, 0.2);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #E7E1D7;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-family: 'Playfair Display', serif;
+    font-size: 18px;
+    font-weight: 400;
+    color: #1F2421;
+}
+
+.modal-close {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: none;
+    font-size: 24px;
+    color: #5C635D;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+.modal-close:hover {
+    background: #F7F4EF;
+}
+
+.modal-body {
+    padding: 20px;
+    overflow-y: auto;
+}
+
+/* ========== 按钮样式增强 ========== */
+.btn-text {
+    background: none;
+    border: none;
+    color: #C4612F;
+    font-size: 13px;
+    cursor: pointer;
+    padding: 4px 8px;
+    transition: opacity 0.2s ease;
+}
+
+.btn-text:hover {
+    opacity: 0.7;
+}
+
+.btn-primary {
+    background: #C4612F;
+    color: #FFFFFF;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+    background: #A85329;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(196, 97, 47, 0.3);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-secondary {
+    background: #FFFFFF;
+    color: #C4612F;
+    border: 1px solid #E7E1D7;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+    border-color: #C4612F;
+    background: #FBF9F5;
+}
+
+.btn-secondary:active {
+    transform: scale(0.98);
+}
+
+/* ========== 徽章样式 ========== */
+.status-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.badge-urgent {
+    background: #FFE5E5;
+    color: #D32F2F;
+}
+
+.badge-upcoming {
+    background: #FFF4E5;
+    color: #F57C00;
+}
+
+.badge-completed {
+    background: #E8F5E9;
+    color: #388E3C;
+}
+
+/* ========== 响应式设计 ========== */
+@media (max-width: 640px) {
+    .progress-dots {
+        justify-content: flex-start;
+    }
+
+    .progress-dot-container {
+        min-width: 50px;
+    }
+
+    .progress-dot-label {
+        font-size: 10px;
+        max-width: 60px;
+    }
+
+    .pagination-buttons {
+        flex-direction: column;
+    }
+
+    .pagination-buttons button {
+        width: 100%;
+    }
+
+    .phase-nav {
+        gap: 6px;
+    }
+
+    .phase-nav-btn {
+        padding: 6px 12px;
+        font-size: 12px;
+    }
+
+    .modal-content {
+        max-width: 100%;
+        max-height: 90vh;
+    }
+}
+
+/* ========== 动画效果 ========== */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+.task-item {
+    animation: slideIn 0.3s ease;
+}
+
+/* ========== 打印样式 ========== */
+@media print {
+    .header,
+    .fab,
+    .btn-primary,
+    .btn-secondary,
+    .phase-nav,
+    .pagination-buttons,
+    .notes-section button {
+        display: none !important;
+    }
+
+    .card {
+        box-shadow: none;
+        border: 1px solid #E7E1D7;
+        page-break-inside: avoid;
+    }
+
+    .progress-indicator {
+        page-break-inside: avoid;
+    }
+}
+
+/* ========== 辅助类 ========== */
+.text-muted {
+    color: #5C635D;
+}
+
+.text-danger {
+    color: #D32F2F;
+}
+
+.text-warning {
+    color: #F57C00;
+}
+
+.text-success {
+    color: #388E3C;
+}
+
+.mb-0 { margin-bottom: 0 !important; }
+.mb-1 { margin-bottom: 8px !important; }
+.mb-2 { margin-bottom: 16px !important; }
+.mb-3 { margin-bottom: 24px !important; }
+
+.mt-0 { margin-top: 0 !important; }
+.mt-1 { margin-top: 8px !important; }
+.mt-2 { margin-top: 16px !important; }
+.mt-3 { margin-top: 24px !important; }
+
+.d-none { display: none !important; }
+.d-block { display: block !important; }
+.d-flex { display: flex !important; }
+
+/* ========== 可访问性 ========== */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* 聚焦样式 */
+button:focus,
+input:focus,
+select:focus,
+textarea:focus {
+    outline: 2px solid #C4612F;
+    outline-offset: 2px;
+}
+
+/* ========== FAB按钮优化 ========== */
+.fab {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: #C4612F;
+    color: #FFFFFF;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(196, 97, 47, 0.4);
+    transition: all 0.3s ease;
+    z-index: 100;
+}
+
+.fab:hover {
+    background: #A85329;
+    transform: scale(1.1) rotate(90deg);
+    box-shadow: 0 6px 20px rgba(196, 97, 47, 0.5);
+}
+
+.fab:active {
+    transform: scale(0.95);
+}
+
+@media (max-width: 640px) {
+    .fab {
+        bottom: 80px; /* 避免被底部导航栏遮挡 */
+    }
+}
