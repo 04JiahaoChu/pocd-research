@@ -122,6 +122,7 @@ class DatabaseOptimized {
                 if (value === '是') result[key] = true;
                 else if (value === '否') result[key] = false;
                 else if (value === '' || value === undefined) result[key] = null;
+                // null 保持 null，true/false 保持原样
             } else if (BOOLEAN_FIELDS.haveNot.has(key)) {
                 if (value === '有') result[key] = true;
                 else if (value === '无') result[key] = false;
@@ -176,6 +177,7 @@ class DatabaseOptimized {
             const { data, error } = await this.supabase
                 .from('patients')
                 .select('id, study_id, name, age, gender, surgery_date, surgery_type, enrollment_date, created_at')
+                .is('deleted_at', null)  // 过滤已删除的患者
                 .order('created_at', { ascending: false });
 
             if (error) {
@@ -187,6 +189,26 @@ class DatabaseOptimized {
             this.setCachedPatients(data);
             return data;
         }, '获取患者列表');
+    }
+
+    // 【新增】批量获取患者及进度（解决N+1问题）
+    async getAllPatientsWithProgress() {
+        return this.retryOperation(async () => {
+            const { data, error } = await this.supabase
+                .from('patients')
+                .select('id, study_id, name, enrollment_date, surgery_date, ward, bed_no, ' +
+                       't0_mmse_total, pod1_cam_delirium, pod3_mmse, ' +
+                       'pod7_mmse, pod14_mmse_short, pod30_mmse')
+                .is('deleted_at', null)  // 过滤已删除的患者
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('批量获取患者进度失败:', error);
+                throw error;
+            }
+
+            return data;
+        }, '批量获取患者进度');
     }
 
     // 缓存管理
@@ -221,6 +243,7 @@ class DatabaseOptimized {
                 .from('patients')
                 .select('*')
                 .eq('id', id)
+                .is('deleted_at', null)  // 过滤已删除的患者
                 .single();
 
             if (error) {
@@ -228,6 +251,7 @@ class DatabaseOptimized {
                 throw error;
             }
 
+            // 读出后把 boolean 还原为中文，方便表单回显
             return this.convertFromDatabase(data);
         }, '获取患者详情');
     }
@@ -248,7 +272,12 @@ class DatabaseOptimized {
                 age: patientData.age || null,
                 gender: patientData.gender || null,
                 enrollment_date: patientData.enrollment_date || new Date().toISOString().split('T')[0],
-                surgery_date: patientData.surgery_date || null
+                surgery_date: patientData.surgery_date || null,
+                // 以下字段之前被遗漏
+                medical_record_no: patientData.medical_record_no || null,
+                ward: patientData.ward || null,
+                bed_no: patientData.bed_no || null,
+                phone: patientData.phone || null
             };
 
             console.log('即将插入的数据:', insertData);
@@ -275,23 +304,13 @@ class DatabaseOptimized {
     // 更新患者（带重试）
     async updatePatient(id, updates) {
         return this.retryOperation(async () => {
-            // 先把中文"是/否/有/无"转为 boolean，再清理空值
-            const converted = this.convertForDatabase({ ...updates });
-            const cleanUpdates = {};
-            for (const [key, value] of Object.entries(converted)) {
-                if (value === '' || value === undefined) {
-                    cleanUpdates[key] = null;
-                } else {
-                    cleanUpdates[key] = value;
-                }
-            }
-
-            // 添加更新时间
-            cleanUpdates.updated_at = new Date().toISOString();
+            // 写入前：把中文"是/否/有/无"转为 boolean
+            const safeUpdates = this.convertForDatabase({ ...updates });
+            safeUpdates.updated_at = new Date().toISOString();
 
             const { data, error } = await this.supabase
                 .from('patients')
-                .update(cleanUpdates)
+                .update(safeUpdates)
                 .eq('id', id)
                 .select()
                 .single();
@@ -303,16 +322,27 @@ class DatabaseOptimized {
             }
 
             this.clearCache();
+            // 读出后还原为中文
             return this.convertFromDatabase(data);
         }, '更新患者');
     }
 
-    // 删除患者（带重试）
+    // 删除患者（软删除）
     async deletePatient(id) {
         return this.retryOperation(async () => {
+            // 获取当前用户ID
+            let userId = null;
+            if (window.auth && window.auth.currentUser) {
+                userId = window.auth.currentUser.user_id || window.auth.currentUser.id;
+            }
+
+            // 软删除：标记 deleted_at 而非物理删除
             const { error } = await this.supabase
                 .from('patients')
-                .delete()
+                .update({
+                    deleted_at: new Date().toISOString(),
+                    deleted_by: userId
+                })
                 .eq('id', id);
 
             if (error) {
@@ -321,17 +351,21 @@ class DatabaseOptimized {
             }
 
             this.clearCache();
+            console.log('患者已标记为删除（软删除）:', id);
             return true;
         }, '删除患者');
     }
 
     // 获取患者所有阶段数据（新增方法）
     async getAllPatientData(patientId) {
+        // 因为使用的是宽表结构，所有数据都在 patients 表中
+        // 这个方法返回完整的患者记录
         return this.retryOperation(async () => {
             const { data, error } = await this.supabase
                 .from('patients')
                 .select('*')
                 .eq('id', patientId)
+                .is('deleted_at', null)  // 过滤已删除的患者
                 .single();
 
             if (error) {
@@ -339,6 +373,7 @@ class DatabaseOptimized {
                 throw error;
             }
 
+            // 读出后还原 boolean 为中文
             return this.convertFromDatabase(data);
         }, '获取患者所有数据');
     }
@@ -347,20 +382,12 @@ class DatabaseOptimized {
     async savePatientData(patientId, phase, formData, isCompleted) {
         // 宽表结构：直接更新 patients 表的相应字段
         return this.retryOperation(async () => {
-            // 先把中文"是/否/有/无"转为 boolean，再清理空值
-            const converted = this.convertForDatabase({ ...formData });
-            const cleanFormData = {};
-            for (const [key, value] of Object.entries(converted)) {
-                if (value === '' || value === undefined) {
-                    cleanFormData[key] = null;
-                } else {
-                    cleanFormData[key] = value;
-                }
-            }
+            // 写入前：把中文"是/否/有/无"转为 boolean
+            const safeData = this.convertForDatabase({ ...formData });
 
             const { data, error } = await this.supabase
                 .from('patients')
-                .update(cleanFormData)
+                .update(safeData)
                 .eq('id', patientId)
                 .select()
                 .single();
@@ -371,6 +398,7 @@ class DatabaseOptimized {
             }
 
             this.clearCache();
+            // 读出后还原为中文
             return this.convertFromDatabase(data);
         }, '保存患者数据');
     }
@@ -383,7 +411,8 @@ class DatabaseOptimized {
 
     // ========== 今日任务计算 ==========
     async getTodayTasks() {
-        const patients = await this.getAllPatients();
+        // 【优化】使用批量查询，一次性获取所有患者数据
+        const patients = await this.getAllPatientsWithProgress();
         const tasks = {
             urgent: [],
             upcoming: [],
@@ -404,8 +433,8 @@ class DatabaseOptimized {
                 { id: 'POD30', name: 'POD30 术后第30天', checkField: 'pod30_mmse', offset: 30 }
             ];
 
-            // 获取患者完整数据
-            const fullPatient = await this.getPatient(patient.id);
+            // 【优化】直接使用已查询的数据，无需再次调用 getPatient
+            const fullPatient = patient;
 
             for (const phase of phases) {
                 // 检查该阶段是否已完成（关键字段是否有数据）
