@@ -427,9 +427,7 @@ class DatabaseOptimized {
                 { id: 'T0', name: 'T0 术前基线', checkField: 't0_mmse_total', offset: null },
                 { id: 'POD1', name: 'POD1 术后第1天', checkField: 'pod1_cam_delirium', offset: 1 },
                 { id: 'POD3', name: 'POD3 术后第3天', checkField: 'pod3_mmse', offset: 3 },
-                { id: 'POD7', name: 'POD7 术后第7天', checkField: 'pod7_mmse', offset: 7 },
-                { id: 'POD14', name: 'POD14 术后第14天', checkField: 'pod14_mmse_short', offset: 14 },
-                { id: 'POD30', name: 'POD30 术后第30天', checkField: 'pod30_mmse', offset: 30 }
+                { id: 'POD7', name: 'POD7 术后第7天', checkField: 'pod7_mmse', offset: 7 }
             ];
 
             // 【优化】直接使用已查询的数据，无需再次调用 getPatient
