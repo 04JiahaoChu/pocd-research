@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#C4612F">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <meta http-equiv="Pragma" content="no-cache">
-    <meta http-equiv="Expires" content="0">
     <title>POCD研究数据采集</title>
     <link rel="manifest" href="manifest.json">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
@@ -442,6 +439,13 @@
 
     <button class="fab" onclick="app.showNewPatient()">+</button>
 
+    <!-- V6.0 新增模块 -->
+    <script src="fields-complete-v6.js"></script>
+    <script src="form-page-manager.js"></script>
+    <script src="notes-api.js"></script>
+    <script src="data-validator.js"></script>
+    <script src="data-exporter.js"></script>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         // 强制清除旧版本缓存
@@ -458,16 +462,24 @@
             });
         }
     </script>
-    <script src="config.js?v=5.2"></script>
-    <script src="database-optimized.js?v=5.2"></script>
-    <script src="auth.js?v=5.2"></script>
-    <script src="fields-complete-v3.js?v=5.2"></script>
-    <script src="app-v2.1-complete.js?v=5.2"></script>
+    <script src="config.js?v=2.5"></script>
+    <script src="modules/draft-manager.js?v=1.0"></script>
+    <script src="modules/validation.js?v=1.0"></script>
+    <script src="modules/field-dependencies.js?v=1.0"></script>
+    <script src="database-optimized.js?v=3.2"></script>
+    <script src="auth.js?v=2.5"></script>
+    <script src="fields-complete-v5.js?v=5.0"></script>
+    <script src="app-v2.1-complete.js?v=3.0"></script>
 
     <script>
         // 页面加载时验证登录状态
         (async () => {
             try {
+                // 【新增】初始化草稿管理器
+                if (window.draftManager) {
+                    await window.draftManager.init();
+                }
+
                 await db.initialize();
                 const isLoggedIn = await auth.init();
 
